@@ -1,0 +1,328 @@
+<section class="module" id="module-6">
+  <div class="module-inner">
+    <div class="screen">
+      <h1>排错与扩展策略</h1>
+      <p>任何复杂的系统都会遇到问题，关键是知道如何快速定位和解决。这个模块将教你成为一个"系统医生"，能够诊断问题并开出正确的药方。</p>
+      <p>这些技能不仅适用于当前系统，在你使用 AI 构建其他应用时同样有用。</p>
+
+      <div class="callout">
+        <strong>💡 为什么要学习排错？</strong><br>
+        调试能力是区分高级用户和普通用户的关键。会排错的人能独立解决问题，不会排错的人只能依赖他人。在 AI 时代，这个差距会更加明显。
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>排错诊断流程</h2>
+
+      <p>系统出问题时，按这个流程诊断，90%的问题都能快速定位。</p>
+
+      <div class="debugging-flowchart">
+        <div class="debug-step">
+          <div class="step-icon">🔍</div>
+          <h4>1. 确定症状</h4>
+          <p>程序在哪个阶段停止？有什么错误信息？</p>
+        </div>
+
+        <div class="debug-arrow">⬇️</div>
+
+        <div class="debug-step">
+          <div class="step-icon">📋</div>
+          <h4>2. 检查状态文件</h4>
+          <p>查看 <code>artifacts/pipeline_state.json</code> 了解进度</p>
+        </div>
+
+        <div class="debug-arrow">⬇️</div>
+
+        <div class="debug-step">
+          <div class="step-icon">📁</div>
+          <h4>3. 验证产物文件</h4>
+          <p>检查对应阶段的输出文件是否存在且有效</p>
+        </div>
+
+        <div class="debug-arrow">⬇️</div>
+
+        <div class="debug-step">
+          <div class="step-icon">⚙️</div>
+          <h4>4. 验证配置</h4>
+          <p>确认配置文件语法正确，路径存在</p>
+        </div>
+
+        <div class="debug-arrow">⬇️</div>
+
+        <div class="debug-step">
+          <div class="step-icon">🤖</div>
+          <h4>5. 测试外部依赖</h4>
+          <p>验证 LLM 接口、文件权限等外部因素</p>
+        </div>
+      </div>
+
+      <div class="diagnostic-commands">
+        <h4>常用诊断命令：</h4>
+        <div class="command-list">
+          <div class="command-item">
+            <code>python -c "from pipeline.config import load_config; print(load_config('pipeline_config.json'))"</code>
+            <span class="command-desc">测试配置文件是否能正确加载</span>
+          </div>
+          <div class="command-item">
+            <code>ls -la artifacts/</code>
+            <span class="command-desc">查看中间产物文件状态</span>
+          </div>
+          <div class="command-item">
+            <code>head -20 artifacts/requirements.json</code>
+            <span class="command-desc">预览需求解析结果</span>
+          </div>
+          <div class="command-item">
+            <code>python pipeline_runner.py --dry-run --preview</code>
+            <span class="command-desc">干跑验证流程，不调用外部服务</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>常见问题诊断手册</h2>
+
+      <div class="problem-scenarios">
+        <div class="scenario-tabs">
+          <button class="tab-btn active" data-tab="config-error">配置错误</button>
+          <button class="tab-btn" data-tab="llm-error">LLM 调用失败</button>
+          <button class="tab-btn" data-tab="parsing-error">解析失败</button>
+          <button class="tab-btn" data-tab="file-error">文件问题</button>
+        </div>
+
+        <div class="tab-content active" data-tab="config-error">
+          <h4>配置文件错误</h4>
+          <div class="problem-case">
+            <div class="symptom">
+              <strong>症状：</strong>程序启动时就报错，提示配置相关问题
+            </div>
+            <div class="diagnosis">
+              <strong>诊断：</strong>
+              <ul>
+                <li>检查 JSON 语法是否正确（逗号、括号、引号）</li>
+                <li>验证必填字段是否存在</li>
+                <li>确认文件路径是否存在</li>
+                <li>检查 API key 环境变量是否设置</li>
+              </ul>
+            </div>
+            <div class="treatment">
+              <strong>解决：</strong>
+              <code>python -c "import json; print(json.load(open('pipeline_config.json')))"</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" data-tab="llm-error">
+          <h4>LLM 调用失败</h4>
+          <div class="problem-case">
+            <div class="symptom">
+              <strong>症状：</strong>在第三阶段停止，提示网络错误或API错误
+            </div>
+            <div class="diagnosis">
+              <strong>诊断：</strong>
+              <ul>
+                <li>检查网络连接和防火墙</li>
+                <li>验证 API key 有效性</li>
+                <li>确认 base_url 和 model 配置正确</li>
+                <li>检查是否超出配额或触发限流</li>
+              </ul>
+            </div>
+            <div class="treatment">
+              <strong>解决：</strong>
+              查看 <code>prompt_cache/</code> 目录，检查已缓存的请求，使用 <code>--resume</code> 从失败处继续
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" data-tab="parsing-error">
+          <h4>解析失败</h4>
+          <div class="problem-case">
+            <div class="symptom">
+              <strong>症状：</strong>LLM 调用成功，但 <code>parsed_cases.json</code> 中用例数量很少
+            </div>
+            <div class="diagnosis">
+              <strong>诊断：</strong>
+              <ul>
+                <li>查看 <code>responses/chunk_*.txt</code> 检查 AI 输出格式</li>
+                <li>检查正则表达式是否匹配实际输出</li>
+                <li>确认 AI 是否按要求输出</li>
+                <li>检查是否有非标准格式的用例</li>
+              </ul>
+            </div>
+            <div class="treatment">
+              <strong>解决：</strong>
+              优化提示词，或扩展正则表达式支持更多格式变体
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" data-tab="file-error">
+          <h4>文件访问问题</h4>
+          <div class="problem-case">
+            <div class="symptom">
+              <strong>症状：</strong>提示文件不存在或权限不足
+            </div>
+            <div class="diagnosis">
+              <strong>诊断：</strong>
+              <ul>
+                <li>确认输入的 Word 文件路径正确</li>
+                <li>检查输出目录是否有写入权限</li>
+                <li>验证相对路径是否正确</li>
+                <li>确认文件没有被其他程序占用</li>
+              </ul>
+            </div>
+            <div class="treatment">
+              <strong>解决：</strong>
+              使用绝对路径，或调整目录权限，关闭占用文件的程序
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>扩展策略：让系统更强大</h2>
+
+      <p>系统设计时考虑了扩展性，你可以在不破坏现有功能的前提下添加新功能。</p>
+
+      <div class="extension-areas">
+        <div class="extension-card">
+          <div class="ext-icon">🔌</div>
+          <h4>新增 LLM 提供商</h4>
+          <div class="ext-content">
+            <p><strong>位置：</strong><code>pipeline/llm_providers/</code></p>
+            <p><strong>步骤：</strong></p>
+            <ol>
+              <li>创建新的 provider 类</li>
+              <li>实现统一的接口方法</li>
+              <li>在工厂类中注册</li>
+              <li>更新配置模式</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="extension-card">
+          <div class="ext-icon">📝</div>
+          <h4>支持新的输入格式</h4>
+          <div class="ext-content">
+            <p><strong>位置：</strong><code>requirement_parser.py</code></p>
+            <p><strong>步骤：</strong></p>
+            <ol>
+              <li>添加新的解析函数</li>
+              <li>保持输出格式一致</li>
+              <li>在配置中添加格式选项</li>
+              <li>更新入口逻辑</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="extension-card">
+          <div class="ext-icon">📊</div>
+          <h4>添加新的输出格式</h4>
+          <div class="ext-content">
+            <p><strong>位置：</strong><code>stages.py</code> 导出逻辑</p>
+            <p><strong>步骤：</strong></p>
+            <ol>
+              <li>实现新的导出函数</li>
+              <li>使用相同的数据源</li>
+              <li>添加配置开关</li>
+              <li>保持向后兼容</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="extension-card">
+          <div class="ext-icon">🧠</div>
+          <h4>优化提示词策略</h4>
+          <div class="ext-content">
+            <p><strong>位置：</strong><code>generate_requirement_prompts.py</code></p>
+            <p><strong>步骤：</strong></p>
+            <ol>
+              <li>分析现有提示词效果</li>
+              <li>添加上下文信息</li>
+              <li>实现动态模板</li>
+              <li>A/B 测试不同策略</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>性能优化建议</h2>
+
+      <div class="optimization-tips">
+        <div class="tip-item">
+          <div class="tip-icon">⚡</div>
+          <h4>并发调优</h4>
+          <p>根据 API 限制调整 <code>max_concurrency</code>。太大触发限流，太小速度慢。</p>
+        </div>
+
+        <div class="tip-item">
+          <div class="tip-icon">🔄</div>
+          <h4>缓存策略</h4>
+          <p>相同项目的迭代开发中，大部分提示词会重复，充分利用缓存机制。</p>
+        </div>
+
+        <div class="tip-item">
+          <div class="tip-icon">📦</div>
+          <h4>批次大小</h4>
+          <p>调整 <code>batch_size</code>：太小浪费请求，太大降低质量，建议 5-10。</p>
+        </div>
+
+        <div class="tip-item">
+          <div class="tip-icon">🎯</div>
+          <h4>提示词质量</h4>
+          <p>高质量的提示词能显著提升解析成功率，减少重试次数。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>测试你的掌握程度</h2>
+
+      <div class="quiz-container">
+        <div class="quiz-question">
+          <p><strong>当系统在第三阶段失败，但你看到 `prompt_cache/` 目录下已经有一些缓存文件时，最好的策略是什么？</strong></p>
+
+          <div class="quiz-options">
+            <label class="quiz-option">
+              <input type="radio" name="q6" value="a">
+              删除缓存目录，重新开始
+            </label>
+            <label class="quiz-option correct">
+              <input type="radio" name="q6" value="b">
+              使用 --resume 参数继续执行
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q6" value="c">
+              修改配置文件重新运行
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q6" value="d">
+              手动调用失败的 LLM 请求
+            </label>
+          </div>
+
+          <div class="quiz-explanation">
+            <p><strong>正确！</strong> 已有的缓存代表成功的 LLM 调用，删除它们会浪费时间和金钱。使用 <code>--resume</code> 能让系统自动识别已完成的部分，只重新执行失败的请求。这正是断点恢复机制的价值所在。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="course-summary">
+        <h3>🎉 恭喜你完成了课程！</h3>
+        <p>现在你已经了解了 Demand Conversion Pipeline 的核心机制：</p>
+        <ul>
+          <li>✅ 数据如何在各个阶段流转</li>
+          <li>✅ 各个组件的职责分工</li>
+          <li>✅ 配置如何驱动系统行为</li>
+          <li>✅ LLM 调用的缓存和重试机制</li>
+          <li>✅ 如何从文本中提取结构化数据</li>
+          <li>✅ 排错和扩展的实用策略</li>
+        </ul>
+        <p>这些知识不仅适用于当前系统，在你构建其他 AI 应用时同样有用。继续探索，用 AI 打造更多有趣的项目吧！</p>
+      </div>
+    </div>
+  </div>
+</section>

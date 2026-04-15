@@ -1,0 +1,31 @@
+{
+  "paths": {
+    "docx": "source/wordv1.3.7.docx",
+    "artifacts_dir": "artifacts",
+    "prompt_cache_dir": "prompt_cache",
+    "responses_dir": "artifacts/responses",
+    "output_excel": "output/output_test_cases.xlsx"
+  },
+  "llm": {
+    "provider": "openai_compatible",
+    "base_url": "https://your-openai-compatible-host/v1",
+    "model": "your-model-name",
+    "api_key_env": "OPENAI_API_KEY",
+    "timeout_seconds": 120,
+    "max_concurrency": 1,
+    "max_retries": 3,
+    "retry_backoff_seconds": 5,
+    "options": {
+      "endpoint": "responses"
+    }
+  },
+  "batch": {
+    "batch_size": 5
+  },
+  "flags": {
+    "resume": false,
+    "dry_run": true,
+    "preview": true,
+    "skip_llm": false
+  }
+}

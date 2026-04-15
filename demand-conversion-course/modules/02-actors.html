@@ -1,0 +1,212 @@
+<section class="module" id="module-2">
+  <div class="module-inner">
+    <div class="screen">
+      <h1>核心角色地图</h1>
+      <p>每个优秀的软件项目就像一部电影，有不同的角色各司其职。在 Demand Conversion Pipeline 中，也有一群"演员"在幕后协作。</p>
+      <p>认识这些角色，能帮你在扩展功能时知道把新代码放在哪里，出问题时知道该检查哪个组件。</p>
+
+      <div class="callout">
+        <strong>💡 为什么要关心角色分工？</strong><br>
+        就像修车要知道发动机、变速箱在哪一样。当你告诉 AI "在配置处理部分加个新功能" 或 "LLM 客户端这里有 bug"，你需要知道这些部分对应哪些代码文件。
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>主要演员阵容</h2>
+
+      <div class="actor-grid">
+        <div class="actor-card">
+          <div class="actor-icon">🎭</div>
+          <h3>指挥官 (pipeline_runner.py)</h3>
+          <p>整个系统的总导演，负责协调所有其他角色按顺序工作</p>
+          <div class="actor-responsibility">
+            <strong>主要职责：</strong>
+            <ul>
+              <li>解析命令行参数</li>
+              <li>加载配置文件</li>
+              <li>按顺序调用各个阶段</li>
+              <li>处理错误和重试逻辑</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="actor-card">
+          <div class="actor-icon">⚙️</div>
+          <h3>配置管家 (config.py)</h3>
+          <p>管理所有的设置项，确保每个组件都知道自己该怎么工作</p>
+          <div class="actor-responsibility">
+            <strong>主要职责：</strong>
+            <ul>
+              <li>读取和验证 JSON 配置</li>
+              <li>提供默认值</li>
+              <li>路径解析和验证</li>
+              <li>LLM 提供商配置</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="actor-card">
+          <div class="actor-icon">📖</div>
+          <h3>文档阅读员 (requirement_parser.py)</h3>
+          <p>专门负责理解 Word 文档，把人类的需求翻译成程序能处理的格式</p>
+          <div class="actor-responsibility">
+            <strong>主要职责：</strong>
+            <ul>
+              <li>解析 Word 表格</li>
+              <li>提取需求标题和描述</li>
+              <li>处理空行和合并逻辑</li>
+              <li>生成结构化需求对象</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="actor-card">
+          <div class="actor-icon">✍️</div>
+          <h3>提示词作家 (generate_requirement_prompts.py)</h3>
+          <p>把需求翻译成 AI 能理解的指令，就像给 AI 写剧本一样</p>
+          <div class="actor-responsibility">
+            <strong>主要职责：</strong>
+            <ul>
+              <li>将需求分批组织</li>
+              <li>生成标准化提示词模板</li>
+              <li>添加输出格式说明</li>
+              <li>保存为独立的提示词文件</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="actor-card">
+          <div class="actor-icon">🤖</div>
+          <h3>AI 经纪人 (llm_client.py)</h3>
+          <p>负责和各种 AI 服务商打交道，管理调用、重试、缓存等复杂逻辑</p>
+          <div class="actor-responsibility">
+            <strong>主要职责：</strong>
+            <ul>
+              <li>管理不同 LLM 提供商</li>
+              <li>处理并发调用和限流</li>
+              <li>实现智能重试机制</li>
+              <li>缓存管理和验证</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="actor-card">
+          <div class="actor-icon">🔍</div>
+          <h3>用例挖掘师 (stages.py 中的解析逻辑)</h3>
+          <p>从 AI 的自由文本回复中，用正则表达式精确提取出结构化的测试用例</p>
+          <div class="actor-responsibility">
+            <strong>主要职责：</strong>
+            <ul>
+              <li>解析 AI 回复文本</li>
+              <li>提取用例名称、操作、预期结果</li>
+              <li>数据清洗和格式标准化</li>
+              <li>生成最终测试用例对象</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>角色间的对话</h2>
+
+      <div class="chat-animation" id="roles-chat">
+        <div class="chat-message runner">
+          <strong>指挥官:</strong> 大家好，今天要处理一个新的需求文档
+        </div>
+        <div class="chat-message config">
+          <strong>配置管家:</strong> 收到！配置文件已加载，LLM 设置是 gpt-5.3-codex，批次大小 8
+        </div>
+        <div class="chat-message parser">
+          <strong>文档阅读员:</strong> Word 文件在这里，我先读一遍... 发现 47 个需求块
+        </div>
+        <div class="chat-message prompter">
+          <strong>提示词作家:</strong> 收到需求数据！我来分成 6 批，每批写一个提示词
+        </div>
+        <div class="chat-message runner">
+          <strong>指挥官:</strong> 提示词准备好了，AI 经纪人你上场
+        </div>
+        <div class="chat-message llm">
+          <strong>AI 经纪人:</strong> 正在连接 yunwu.ai... 预检查通过，开始并发调用
+        </div>
+        <div class="chat-message llm">
+          <strong>AI 经纪人:</strong> 第1批完成 ✅ 第2批完成 ✅ 第3批完成 ✅
+        </div>
+        <div class="chat-message extractor">
+          <strong>用例挖掘师:</strong> 让我从这些回复里挖宝... 找到 203 条测试用例！
+        </div>
+        <div class="chat-message runner">
+          <strong>指挥官:</strong> 完美！导出 Excel，任务完成 🎉
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>代码中的角色分工</h2>
+
+      <div class="code-translation">
+        <div class="code-side">
+          <h4>代码这样组织：</h4>
+          <pre><code>pipeline_runner.py    # 指挥官
+├── config.py          # 配置管家
+├── requirement_parser.py  # 文档阅读员
+├── generate_requirement_prompts.py  # 提示词作家
+├── llm_client.py     # AI 经纪人
+└── stages.py         # 用例挖掘师 + 整体流程
+</code></pre>
+        </div>
+        <div class="english-side">
+          <h4>为什么这样分工：</h4>
+          <ul>
+            <li><strong>单一职责：</strong>每个文件只做一件事情，出错时容易定位</li>
+            <li><strong>可测试性：</strong>每个角色都可以独立测试</li>
+            <li><strong>可扩展性：</strong>想换 LLM 提供商？只改 llm_client.py</li>
+            <li><strong>可维护性：</strong>需求解析有问题？只看 requirement_parser.py</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>🎯 实用技巧</strong><br>
+        当你要求 AI 修改功能时，可以这样说："在 config.py 里添加新的配置项"、"修改 llm_client.py 的重试逻辑"。比说"改一下配置"、"修复 AI 调用"要精确得多。
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>测试你的理解</h2>
+
+      <div class="quiz-container">
+        <div class="quiz-question">
+          <p><strong>如果你想添加支持新的 LLM 服务商（比如 Claude），你主要需要修改哪个文件？</strong></p>
+
+          <div class="quiz-options">
+            <label class="quiz-option">
+              <input type="radio" name="q2" value="a">
+              pipeline_runner.py - 因为它是主程序
+            </label>
+            <label class="quiz-option correct">
+              <input type="radio" name="q2" value="b">
+              llm_client.py - 因为它专门负责 LLM 接口
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q2" value="c">
+              config.py - 因为需要新增配置项
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q2" value="d">
+              所有文件都要改
+            </label>
+          </div>
+
+          <div class="quiz-explanation">
+            <p><strong>正确！</strong> 虽然可能需要在 config.py 中添加新的配置选项，但核心的接口实现在 llm_client.py 中。这个文件里有 provider 工厂模式，专门用来支持不同的 LLM 服务商。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-hint">
+        <p>👆 了解了角色分工，接下来看看配置是如何驱动整个系统行为的</p>
+      </div>
+    </div>
+  </div>
+</section>

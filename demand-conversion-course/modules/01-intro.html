@@ -1,0 +1,163 @@
+<section class="module" id="module-1">
+  <div class="module-inner">
+    <div class="screen">
+      <h1>一键运行时发生了什么</h1>
+      <p>想象一下：你有一个 Word 文档里写着密密麻麻的需求，然后只需要一条命令，它就自动变成了整齐的 Excel 测试用例表格。</p>
+      <p>这听起来像魔法，但其实是一个精心设计的<span class="tooltip" data-tooltip="Pipeline：流水线，就像工厂装配线一样，数据按顺序经过多个处理站点">数据流水线</span>在工作。</p>
+
+      <div class="callout">
+        <strong>💡 为什么要关心这个？</strong><br>
+        理解数据怎么流动，能帮你：调试问题时知道在哪个环节卡住了，向 AI 要求类似功能时能说清楚架构，扩展功能时不会搞乱现有流程。
+      </div>
+
+      <div class="code-translation">
+        <div class="code-side">
+          <h4>代码这样说：</h4>
+          <pre><code>python pipeline_runner.py --config pipeline_config.json --preview
+</code></pre>
+        </div>
+        <div class="english-side">
+          <h4>人话翻译：</h4>
+          <p>运行流水线程序，按照配置文件的设置，先预览一遍结果不要真正执行</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>完整旅程图：从 Word 到 Excel</h2>
+
+      <div class="flow-animation" data-steps='[
+        {"from": "word-doc", "to": "requirements", "label": "解析需求", "delay": 0},
+        {"from": "requirements", "to": "prompts", "label": "生成提示词", "delay": 800},
+        {"from": "prompts", "to": "llm", "label": "LLM 处理", "delay": 1600},
+        {"from": "llm", "to": "cases", "label": "解析用例", "delay": 2400},
+        {"from": "cases", "to": "excel", "label": "导出 Excel", "delay": 3200}
+      ]'>
+        <div class="flow-node" id="word-doc">
+          <div class="node-content">
+            <span class="node-icon">📄</span>
+            <span class="node-label">Word 文档</span>
+          </div>
+        </div>
+        <div class="flow-node" id="requirements">
+          <div class="node-content">
+            <span class="node-icon">📋</span>
+            <span class="node-label">结构化需求</span>
+          </div>
+        </div>
+        <div class="flow-node" id="prompts">
+          <div class="node-content">
+            <span class="node-icon">💬</span>
+            <span class="node-label">AI 提示词</span>
+          </div>
+        </div>
+        <div class="flow-node" id="llm">
+          <div class="node-content">
+            <span class="node-icon">🤖</span>
+            <span class="node-label">AI 模型</span>
+          </div>
+        </div>
+        <div class="flow-node" id="cases">
+          <div class="node-content">
+            <span class="node-icon">✅</span>
+            <span class="node-label">测试用例</span>
+          </div>
+        </div>
+        <div class="flow-node" id="excel">
+          <div class="node-content">
+            <span class="node-icon">📊</span>
+            <span class="node-label">Excel 表格</span>
+          </div>
+        </div>
+      </div>
+
+      <p>每一步都有<span class="tooltip" data-tooltip="断点恢复：如果中间出错，可以从上次成功的地方继续，不用重新开始">断点保护</span>，所以即使中途出错，也能接着上次的进度继续。</p>
+    </div>
+
+    <div class="screen">
+      <h2>实际命令运行时</h2>
+
+      <div class="chat-animation" id="pipeline-chat">
+        <div class="chat-message system">
+          <strong>用户:</strong> python pipeline_runner.py --config pipeline_config.json
+        </div>
+        <div class="chat-message pipeline">
+          <strong>Pipeline:</strong> 好的，开始检查配置文件...
+        </div>
+        <div class="chat-message pipeline">
+          <strong>Pipeline:</strong> 配置正常！开始第一阶段：解析 Word 文档
+        </div>
+        <div class="chat-message parser">
+          <strong>文档解析器:</strong> 找到 Word 文件，开始提取表格内容...
+        </div>
+        <div class="chat-message parser">
+          <strong>文档解析器:</strong> 解析完成！发现 47 个需求块
+        </div>
+        <div class="chat-message pipeline">
+          <strong>Pipeline:</strong> 第二阶段：生成 AI 提示词
+        </div>
+        <div class="chat-message prompter">
+          <strong>提示词生成器:</strong> 按每批 8 个需求分组，生成 6 个提示词文件
+        </div>
+        <div class="chat-message pipeline">
+          <strong>Pipeline:</strong> 第三阶段：调用 LLM
+        </div>
+        <div class="chat-message llm">
+          <strong>LLM 客户端:</strong> 连接到 gpt-5.3-codex，开始批量处理...
+        </div>
+        <div class="chat-message llm">
+          <strong>LLM 客户端:</strong> 所有批次处理完成！
+        </div>
+        <div class="chat-message pipeline">
+          <strong>Pipeline:</strong> 第四阶段：解析测试用例
+        </div>
+        <div class="chat-message parser">
+          <strong>用例解析器:</strong> 从 AI 回复中提取出 203 条测试用例
+        </div>
+        <div class="chat-message pipeline">
+          <strong>Pipeline:</strong> 第五阶段：导出 Excel
+        </div>
+        <div class="chat-message exporter">
+          <strong>Excel 导出器:</strong> ✅ 导出完成：output/output_test_cases.xlsx
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>测试你的理解</h2>
+
+      <div class="quiz-container">
+        <div class="quiz-question">
+          <p><strong>如果程序在第三阶段（LLM 调用）时网络断了，重新运行会怎样？</strong></p>
+
+          <div class="quiz-options">
+            <label class="quiz-option">
+              <input type="radio" name="q1" value="a">
+              从头开始，重新解析 Word 文档
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q1" value="b">
+              程序会报错退出
+            </label>
+            <label class="quiz-option correct">
+              <input type="radio" name="q1" value="c">
+              从第三阶段开始继续，跳过前面已完成的步骤
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q1" value="d">
+              需要手动删除中间文件才能重新运行
+            </label>
+          </div>
+
+          <div class="quiz-explanation">
+            <p><strong>正确！</strong> Pipeline 有智能的断点恢复功能。它会检查 <code>artifacts/pipeline_state.json</code> 文件，看哪些阶段已经完成，然后从失败的地方继续。这就是为什么配置中有 <code>--resume</code> 参数。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-hint">
+        <p>👆 选择答案看解释，然后继续到下一个模块了解系统的核心角色</p>
+      </div>
+    </div>
+  </div>
+</section>

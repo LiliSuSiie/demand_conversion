@@ -1,0 +1,283 @@
+<section class="module" id="module-3">
+  <div class="module-inner">
+    <div class="screen">
+      <h1>配置如何驱动行为</h1>
+      <p>想象一下，配置文件就像汽车的仪表盘——你通过调整不同的开关和数值，来控制整个系统的行为。</p>
+      <p>在 Demand Conversion Pipeline 中，几乎所有的行为都可以通过 <code>pipeline_config.json</code> 来控制，而不需要修改代码。</p>
+
+      <div class="callout">
+        <strong>💡 为什么配置如此重要？</strong><br>
+        掌握配置，意味着你可以在不碰代码的情况下：切换 AI 模型、调整批处理大小、更改输出路径、开启调试模式。这是"零代码定制"的核心。
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>配置的层级结构</h2>
+
+      <div class="config-tree">
+        <div class="config-node">
+          <div class="config-icon">📁</div>
+          <span class="config-name">pipeline_config.json</span>
+          <div class="config-children">
+            <div class="config-child">
+              <div class="config-icon">📂</div>
+              <span class="config-name">paths</span>
+              <div class="config-desc">文件路径配置</div>
+            </div>
+            <div class="config-child">
+              <div class="config-icon">🤖</div>
+              <span class="config-name">llm</span>
+              <div class="config-desc">AI 模型配置</div>
+            </div>
+            <div class="config-child">
+              <div class="config-icon">📦</div>
+              <span class="config-name">batch</span>
+              <div class="config-desc">批处理配置</div>
+            </div>
+            <div class="config-child">
+              <div class="config-icon">🚀</div>
+              <span class="config-name">flags</span>
+              <div class="config-desc">执行开关配置</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-translation">
+        <div class="code-side">
+          <h4>配置文件长这样：</h4>
+          <pre><code>{
+  "paths": {
+    "docx": "source/requirements.docx",
+    "artifacts_dir": "artifacts",
+    "output_excel": "output/test_cases.xlsx"
+  },
+  "llm": {
+    "provider": "openai_compatible",
+    "base_url": "https://yunwu.ai/v1",
+    "model": "gpt-5.3-codex"
+  },
+  "batch": {
+    "batch_size": 8
+  },
+  "flags": {
+    "resume": false,
+    "dry_run": false
+  }
+}</code></pre>
+        </div>
+        <div class="english-side">
+          <h4>系统如何理解：</h4>
+          <ul>
+            <li><strong>paths：</strong>"去这些地方找文件，结果放这里"</li>
+            <li><strong>llm：</strong>"连这个 AI 服务，用这个模型"</li>
+            <li><strong>batch：</strong>"每次处理 8 个需求"</li>
+            <li><strong>flags：</strong>"要不要断点续传，要不要真正执行"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>配置 vs 命令行：优先级游戏</h2>
+
+      <p>系统有一套聪明的优先级规则：命令行参数 > 配置文件 > 默认值</p>
+
+      <div class="priority-demo">
+        <div class="priority-level">
+          <div class="priority-badge high">最高优先级</div>
+          <div class="priority-content">
+            <h4>命令行参数</h4>
+            <code>python pipeline_runner.py --dry-run --resume</code>
+            <p>临时控制，这次运行特殊设置</p>
+          </div>
+        </div>
+
+        <div class="priority-arrow">⬇️</div>
+
+        <div class="priority-level">
+          <div class="priority-badge medium">中等优先级</div>
+          <div class="priority-content">
+            <h4>配置文件</h4>
+            <code>"dry_run": false, "resume": false</code>
+            <p>项目的默认行为，长期稳定设置</p>
+          </div>
+        </div>
+
+        <div class="priority-arrow">⬇️</div>
+
+        <div class="priority-level">
+          <div class="priority-badge low">最低优先级</div>
+          <div class="priority-content">
+            <h4>代码默认值</h4>
+            <code>dry_run = False, resume = False</code>
+            <p>保底设置，防止配置缺失时程序崩溃</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-translation">
+        <div class="code-side">
+          <h4>代码中的优先级逻辑：</h4>
+          <pre><code>def main() -> None:
+    config = load_config(args.config)
+
+    # 命令行覆盖配置文件
+    if args.resume:
+        config.flags.resume = True
+    if args.dry_run:
+        config.flags.dry_run = True
+    if args.preview:
+        config.flags.preview = True</code></pre>
+        </div>
+        <div class="english-side">
+          <h4>实际效果：</h4>
+          <p>即使配置文件里写着 <code>"dry_run": false</code>，只要你在命令行加了 <code>--dry-run</code>，系统就会按干跑模式执行。</p>
+          <p>这样既保证了配置的稳定性，又给了临时调整的灵活性。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>LLM 提供商的配置魔法</h2>
+
+      <p>系统支持多种 AI 服务商，通过 <code>provider</code> 字段自动选择对应的接口实现。</p>
+
+      <div class="provider-switcher">
+        <div class="provider-option" data-provider="openai">
+          <div class="provider-header">
+            <input type="radio" name="provider" value="openai" checked>
+            <label>OpenAI 兼容</label>
+          </div>
+          <div class="provider-config">
+            <pre><code>{
+  "provider": "openai_compatible",
+  "base_url": "https://yunwu.ai/v1",
+  "model": "gpt-5.3-codex",
+  "options": {
+    "endpoint": "responses"
+  }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="provider-option" data-provider="custom">
+          <div class="provider-header">
+            <input type="radio" name="provider" value="custom">
+            <label>自定义 HTTP</label>
+          </div>
+          <div class="provider-config">
+            <pre><code>{
+  "provider": "custom_http",
+  "base_url": "https://your-api.com",
+  "model": "testcase-v1",
+  "options": {
+    "method": "POST",
+    "path": "/generate",
+    "request_format": "prompt_model"
+  }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="provider-option" data-provider="anthropic">
+          <div class="provider-header">
+            <input type="radio" name="provider" value="anthropic">
+            <label>Anthropic (预留)</label>
+          </div>
+          <div class="provider-config">
+            <pre><code>{
+  "provider": "anthropic",
+  "model": "claude-3-sonnet",
+  "api_key_env": "ANTHROPIC_API_KEY"
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <p>同样的代码，不同的配置，就能对接完全不同的 AI 服务。这就是<span class="tooltip" data-tooltip="策略模式：定义一系列算法，把它们封装起来，并让它们可以相互替换">策略模式</span>的威力。</p>
+    </div>
+
+    <div class="screen">
+      <h2>配置驱动的典型场景</h2>
+
+      <div class="scenario-cards">
+        <div class="scenario-card">
+          <h4>🔧 开发调试</h4>
+          <pre><code>{
+  "flags": {
+    "dry_run": true,
+    "preview": true
+  },
+  "batch": {"batch_size": 2}
+}</code></pre>
+          <p>不调用真实 LLM，快速验证流程，小批量测试</p>
+        </div>
+
+        <div class="scenario-card">
+          <h4>🚀 生产运行</h4>
+          <pre><code>{
+  "flags": {
+    "dry_run": false,
+    "resume": true
+  },
+  "batch": {"batch_size": 8},
+  "llm": {"max_concurrency": 3}
+}</code></pre>
+          <p>真实执行，支持断点续传，高效并发</p>
+        </div>
+
+        <div class="scenario-card">
+          <h4>🧪 实验新模型</h4>
+          <pre><code>{
+  "llm": {
+    "model": "gpt-4-turbo",
+    "base_url": "https://new-api.com/v1"
+  },
+  "paths": {
+    "artifacts_dir": "experiments/gpt4"
+  }
+}</code></pre>
+          <p>切换模型，独立输出目录，对比效果</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>测试你的理解</h2>
+
+      <div class="quiz-container">
+        <div class="quiz-question">
+          <p><strong>假设配置文件里设置了 `"dry_run": false"`，但你运行命令时加了 `--dry-run` 参数，最终会发生什么？</strong></p>
+
+          <div class="quiz-options">
+            <label class="quiz-option">
+              <input type="radio" name="q3" value="a">
+              程序会报错，因为配置冲突
+            </label>
+            <label class="quiz-option correct">
+              <input type="radio" name="q3" value="b">
+              按干跑模式执行，不调用真实 LLM
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q3" value="c">
+              按配置文件执行，忽略命令行参数
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q3" value="d">
+              程序会询问用户选择哪个设置
+            </label>
+          </div>
+
+          <div class="quiz-explanation">
+            <p><strong>正确！</strong> 命令行参数的优先级最高。代码中有明确的逻辑：<code>if args.dry_run: config.flags.dry_run = True</code>，会覆盖配置文件的设置。这种设计让你可以灵活地进行临时调整。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-hint">
+        <p>👆 掌握了配置驱动，接下来深入了解 LLM 调用的奥秘</p>
+      </div>
+    </div>
+  </div>
+</section>

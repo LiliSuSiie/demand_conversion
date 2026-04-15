@@ -1,0 +1,279 @@
+<section class="module" id="module-4">
+  <div class="module-inner">
+    <div class="screen">
+      <h1>LLM调用与缓存恢复</h1>
+      <p>调用 AI 就像点外卖：你不想每次都重复下单，也不想因为网络问题就前功尽弃。这个系统设计了一套精巧的缓存和重试机制。</p>
+      <p>理解这套机制，能帮你在开发 AI 应用时避免常见的坑：重复计费、超时失败、缓存污染。</p>
+
+      <div class="callout">
+        <strong>💡 为什么要关心 LLM 调用细节？</strong><br>
+        AI 调用是昂贵且不可靠的。掌握缓存、重试、并发控制，能让你的 AI 应用既省钱又稳定。这些知识在任何 AI 项目中都通用。
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>调用前的安全检查：Preflight</h2>
+
+      <p>就像飞行员起飞前要检查仪表一样，系统在批量调用前会先做一次<span class="tooltip" data-tooltip="Preflight：预检查，确保所有配置都正确，避免批量失败">预检查</span>。</p>
+
+      <div class="preflight-checklist">
+        <div class="check-item">
+          <div class="check-icon">✅</div>
+          <div class="check-content">
+            <h4>1. 连通性检查</h4>
+            <p>能连上 API 服务器吗？</p>
+          </div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✅</div>
+          <div class="check-content">
+            <h4>2. 认证检查</h4>
+            <p>API Key 有效吗？</p>
+          </div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✅</div>
+          <div class="check-content">
+            <h4>3. 响应格式检查</h4>
+            <p>返回的内容是预期格式吗？</p>
+          </div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✅</div>
+          <div class="check-content">
+            <h4>4. 空响应检查</h4>
+            <p>模型会返回有意义的内容吗？</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-translation">
+        <div class="code-side">
+          <h4>Preflight 代码逻辑：</h4>
+          <pre><code>async def _run_preflight(self) -> None:
+    # 构造测试请求
+    test_request = LLMRequest(
+        prompt="test preflight",
+        metadata={"chunk_id": "preflight"}
+    )
+
+    # 尝试调用一次
+    response = await self._send_single_request(test_request)
+
+    # 检查返回是否有效
+    if not response.text.strip():
+        raise ValueError("LLM returned empty response")</code></pre>
+        </div>
+        <div class="english-side">
+          <h4>为什么需要 Preflight：</h4>
+          <ul>
+            <li><strong>快速失败：</strong>配置错误时立即发现，不浪费时间</li>
+            <li><strong>批量保护：</strong>避免 50 个请求都失败，浪费配额</li>
+            <li><strong>调试友好：</strong>清晰的错误信息，快速定位问题</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>智能缓存：避免重复消费</h2>
+
+      <p>系统会为每个提示词计算<span class="tooltip" data-tooltip="哈希值：像指纹一样，内容稍有不同就会产生完全不同的哈希值">哈希值</span>，相同的输入不会重复调用 AI。</p>
+
+      <div class="cache-flow">
+        <div class="cache-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>收到新请求</h4>
+            <p>prompt: "生成测试用例..."</p>
+          </div>
+        </div>
+
+        <div class="cache-arrow">⬇️</div>
+
+        <div class="cache-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>计算哈希值</h4>
+            <p>hash: "a1b2c3d4..."</p>
+          </div>
+        </div>
+
+        <div class="cache-arrow">⬇️</div>
+
+        <div class="cache-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>检查缓存</h4>
+            <p>缓存文件存在吗？</p>
+          </div>
+        </div>
+
+        <div class="cache-decision">
+          <div class="cache-branch hit">
+            <div class="branch-label">缓存命中 ✅</div>
+            <div class="branch-content">
+              <h4>直接返回缓存</h4>
+              <p>省钱省时间</p>
+            </div>
+          </div>
+
+          <div class="cache-branch miss">
+            <div class="branch-label">缓存未命中 ❌</div>
+            <div class="branch-content">
+              <h4>调用 LLM</h4>
+              <p>保存结果到缓存</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cache-file-structure">
+        <h4>缓存文件结构：</h4>
+        <pre><code>prompt_cache/
+├── chunk_0_a1b2c3d4.json    # 第0批的缓存
+├── chunk_1_e5f6g7h8.json    # 第1批的缓存
+└── chunk_2_i9j0k1l2.json    # 第2批的缓存
+
+# 每个缓存文件包含：
+{
+  "raw_text": "• 用例：登录成功...",  # AI 原始回复
+  "metadata": {
+    "provider": "openai_compatible",
+    "model": "gpt-5.3-codex",
+    "usage": {"tokens": 1234}
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>并发控制：不被限流封号</h2>
+
+      <p>大部分 AI 服务都有<span class="tooltip" data-tooltip="Rate Limit：速率限制，防止用户短时间内发送太多请求">速率限制</span>。系统用信号量控制并发，避免触发限流。</p>
+
+      <div class="concurrency-demo" data-animation="concurrency">
+        <div class="demo-controls">
+          <label>并发数限制：</label>
+          <input type="range" min="1" max="5" value="3" data-control="concurrency">
+          <span data-display="concurrency">3</span>
+        </div>
+
+        <div class="request-pool">
+          <div class="waiting-requests">
+            <h4>等待队列</h4>
+            <div class="request-item">请求 #4</div>
+            <div class="request-item">请求 #5</div>
+            <div class="request-item">请求 #6</div>
+          </div>
+
+          <div class="active-requests">
+            <h4>正在执行</h4>
+            <div class="request-item active">请求 #1</div>
+            <div class="request-item active">请求 #2</div>
+            <div class="request-item active">请求 #3</div>
+          </div>
+
+          <div class="completed-requests">
+            <h4>已完成</h4>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-translation">
+        <div class="code-side">
+          <h4>并发控制代码：</h4>
+          <pre><code>async def send_batch(self, requests: List[LLMRequest]) -> List[LLMResponse]:
+    # 创建信号量，限制并发数
+    semaphore = asyncio.Semaphore(self.config.max_concurrency)
+
+    async def _send_with_semaphore(request):
+        async with semaphore:  # 获取信号量
+            return await self._send_single_request(request)
+
+    # 并发执行，但受信号量限制
+    tasks = [_send_with_semaphore(req) for req in requests]
+    return await asyncio.gather(*tasks)</code></pre>
+        </div>
+        <div class="english-side">
+          <h4>为什么要限制并发：</h4>
+          <ul>
+            <li><strong>避免限流：</strong>太多并发请求会触发 API 的限流机制</li>
+            <li><strong>资源保护：</strong>避免过载本地网络和内存</li>
+            <li><strong>友好使用：</strong>避免被 API 提供商标记为滥用</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>重试机制：网络不稳定时的救星</h2>
+
+      <div class="retry-timeline">
+        <div class="retry-attempt">
+          <div class="attempt-label">第1次尝试</div>
+          <div class="attempt-result fail">❌ 网络超时</div>
+          <div class="attempt-wait">等待 5 秒</div>
+        </div>
+
+        <div class="retry-attempt">
+          <div class="attempt-label">第2次尝试</div>
+          <div class="attempt-result fail">❌ 服务器错误</div>
+          <div class="attempt-wait">等待 10 秒</div>
+        </div>
+
+        <div class="retry-attempt">
+          <div class="attempt-label">第3次尝试</div>
+          <div class="attempt-result success">✅ 调用成功</div>
+        </div>
+      </div>
+
+      <div class="retry-strategy">
+        <h4>重试策略：</h4>
+        <ul>
+          <li><strong>指数退避：</strong>5秒 → 10秒 → 20秒，避免加剧服务器压力</li>
+          <li><strong>有限次数：</strong>最多重试3次，避免死循环</li>
+          <li><strong>区分错误：</strong>网络错误重试，认证错误直接失败</li>
+          <li><strong>缓存保护：</strong>重试成功后立即缓存，避免再次失败</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>测试你的理解</h2>
+
+      <div class="quiz-container">
+        <div class="quiz-question">
+          <p><strong>系统遇到相同的提示词时会发生什么？</strong></p>
+
+          <div class="quiz-options">
+            <label class="quiz-option">
+              <input type="radio" name="q4" value="a">
+              每次都调用 LLM，确保结果最新
+            </label>
+            <label class="quiz-option correct">
+              <input type="radio" name="q4" value="b">
+              检查缓存，如果有就直接返回缓存结果
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q4" value="c">
+              询问用户是否使用缓存
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q4" value="d">
+              报错，不允许重复的提示词
+            </label>
+          </div>
+
+          <div class="quiz-explanation">
+            <p><strong>正确！</strong> 系统会计算提示词的哈希值，相同内容对应相同哈希。如果 <code>prompt_cache/chunk_X_hash.json</code> 文件存在且有效，就直接使用缓存结果，这样既节省了成本，又提高了响应速度。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-hint">
+        <p>👆 理解了 LLM 调用机制，接下来看看如何从 AI 的自由文本中提取结构化数据</p>
+      </div>
+    </div>
+  </div>
+</section>

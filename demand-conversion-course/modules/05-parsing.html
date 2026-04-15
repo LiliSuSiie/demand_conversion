@@ -1,0 +1,299 @@
+<section class="module" id="module-5">
+  <div class="module-inner">
+    <div class="screen">
+      <h1>从文本到测试用例</h1>
+      <p>AI 模型回复的是自然语言文本，但我们需要的是结构化的测试用例。这个转换过程就像从一堆散装零件中，按照图纸组装出精密的机械。</p>
+      <p>掌握这个过程，能帮你在处理任何 AI 输出时，都知道如何提取有用的信息。</p>
+
+      <div class="callout">
+        <strong>💡 为什么要关心文本解析？</strong><br>
+        AI 的输出往往是"接近正确"的文本，如何从中稳定提取结构化数据，决定了你的 AI 应用的可靠性。这是所有 AI 应用的核心挑战。
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>AI 输出的典型格式</h2>
+
+      <p>系统要求 AI 按照特定格式回复，但实际输出往往有细微差异。</p>
+
+      <div class="output-samples">
+        <div class="sample ideal">
+          <h4>理想输出：</h4>
+          <pre><code>• 用例：登录成功 - 操作：输入正确用户名和密码点击登录 - 预期：跳转到主页面显示欢迎信息
+• 用例：登录失败 - 操作：输入错误密码点击登录 - 预期：显示密码错误提示信息</code></pre>
+          <div class="sample-note success">✅ 完美格式，直接解析</div>
+        </div>
+
+        <div class="sample variant">
+          <h4>变体1（空格差异）：</h4>
+          <pre><code>•用例：登录成功-操作：输入正确用户名和密码点击登录-预期：跳转到主页面显示欢迎信息
+• 用例：登录失败 -  操作：输入错误密码点击登录  -  预期：显示密码错误提示信息</code></pre>
+          <div class="sample-note warning">⚠️ 空格不一致，需要容错</div>
+        </div>
+
+        <div class="sample variant">
+          <h4>变体2（符号差异）：</h4>
+          <pre><code>- 用例：登录成功 - 操作：输入正确用户名和密码点击登录 - 预期：跳转到主页面显示欢迎信息
+* 用例：登录失败 - 操作：输入错误密码点击登录 - 预期：显示密码错误提示信息</code></pre>
+          <div class="sample-note warning">⚠️ 使用了不同的列表符号</div>
+        </div>
+
+        <div class="sample broken">
+          <h4>变体3（格式错误）：</h4>
+          <pre><code>测试用例1：登录成功
+操作步骤：输入正确用户名和密码点击登录
+预期结果：跳转到主页面显示欢迎信息
+
+测试用例2：登录失败
+操作：输入错误密码点击登录
+预期：显示密码错误提示信息</code></pre>
+          <div class="sample-note error">❌ 格式完全不同，解析失败</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>正则表达式的威力</h2>
+
+      <p>系统使用<span class="tooltip" data-tooltip="正则表达式：一种模式匹配语言，能精确描述文本的结构规律">正则表达式</span>来从文本中提取结构化信息。</p>
+
+      <div class="regex-dissection">
+        <h4>解析规则拆解：</h4>
+        <div class="regex-pattern">
+          <pre><code>^[•*-]\s*用例：(?P&lt;name&gt;.+?)\s*-\s*操作：(?P&lt;operation&gt;.+?)\s*-\s*预期：(?P&lt;expected&gt;.+?)$</code></pre>
+        </div>
+
+        <div class="regex-parts">
+          <div class="regex-part">
+            <div class="part-pattern">^[•*-]\s*</div>
+            <div class="part-meaning">行开头的列表符号 + 可选空格</div>
+          </div>
+          <div class="regex-part">
+            <div class="part-pattern">用例：(?P&lt;name&gt;.+?)\s*</div>
+            <div class="part-meaning">"用例："后面的内容保存为 name</div>
+          </div>
+          <div class="regex-part">
+            <div class="part-pattern">-\s*操作：(?P&lt;operation&gt;.+?)\s*</div>
+            <div class="part-meaning">"-操作："后面的内容保存为 operation</div>
+          </div>
+          <div class="regex-part">
+            <div class="part-pattern">-\s*预期：(?P&lt;expected&gt;.+?)$</div>
+            <div class="part-meaning">"-预期："后面的内容保存为 expected</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="regex-demo">
+        <h4>匹配演示：</h4>
+        <div class="demo-input">
+          <strong>输入文本：</strong>
+          <pre><code>• 用例：登录成功 - 操作：输入正确用户名和密码点击登录 - 预期：跳转到主页面显示欢迎信息</code></pre>
+        </div>
+        <div class="demo-output">
+          <strong>提取结果：</strong>
+          <div class="extracted-fields">
+            <div class="field">
+              <span class="field-label">name:</span>
+              <span class="field-value">"登录成功"</span>
+            </div>
+            <div class="field">
+              <span class="field-label">operation:</span>
+              <span class="field-value">"输入正确用户名和密码点击登录"</span>
+            </div>
+            <div class="field">
+              <span class="field-label">expected:</span>
+              <span class="field-value">"跳转到主页面显示欢迎信息"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>解析流水线</h2>
+
+      <div class="parsing-pipeline">
+        <div class="pipeline-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>读取原始文本</h4>
+            <p>从 <code>responses/chunk_*.txt</code> 加载 AI 回复</p>
+          </div>
+        </div>
+
+        <div class="pipeline-arrow">⬇️</div>
+
+        <div class="pipeline-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>按行分割</h4>
+            <p>每一行可能包含一个测试用例</p>
+          </div>
+        </div>
+
+        <div class="pipeline-arrow">⬇️</div>
+
+        <div class="pipeline-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>正则匹配</h4>
+            <p>尝试用预定义规则提取字段</p>
+          </div>
+        </div>
+
+        <div class="pipeline-arrow">⬇️</div>
+
+        <div class="pipeline-step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h4>数据清洗</h4>
+            <p>去除多余空格，标准化格式</p>
+          </div>
+        </div>
+
+        <div class="pipeline-arrow">⬇️</div>
+
+        <div class="pipeline-step">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <h4>结构化对象</h4>
+            <p>创建 TestCase 对象，准备导出</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-translation">
+        <div class="code-side">
+          <h4>解析核心代码：</h4>
+          <pre><code>LLM_CONVERT_REGEX = re.compile(
+    r"^[•*-]\s*用例：(?P&lt;name&gt;.+?)\s*-\s*操作：(?P&lt;operation&gt;.+?)\s*-\s*预期：(?P&lt;expected&gt;.+?)$",
+    re.MULTILINE
+)
+
+def parse_test_cases(text: str) -> List[TestCase]:
+    cases = []
+    for match in LLM_CONVERT_REGEX.finditer(text):
+        case = TestCase(
+            name=match.group('name').strip(),
+            operation=match.group('operation').strip(),
+            expected=match.group('expected').strip()
+        )
+        cases.append(case)
+    return cases</code></pre>
+        </div>
+        <div class="english-side">
+          <h4>关键设计考量：</h4>
+          <ul>
+            <li><strong>容错性：</strong><code>\s*</code> 匹配可选空格，应对格式差异</li>
+            <li><strong>贪婪控制：</strong><code>.+?</code> 非贪婪匹配，避免跨字段错误</li>
+            <li><strong>清理：</strong><code>strip()</code> 去除首尾空格</li>
+            <li><strong>多行模式：</strong><code>re.MULTILINE</code> 支持每行独立匹配</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>解析成功率监控</h2>
+
+      <p>系统会统计解析成功率，帮助你发现 AI 输出质量问题。</p>
+
+      <div class="parse-stats">
+        <div class="stat-item">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <h4>总行数</h4>
+            <div class="stat-value">156</div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-icon">✅</div>
+          <div class="stat-content">
+            <h4>成功解析</h4>
+            <div class="stat-value">142</div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-icon">❌</div>
+          <div class="stat-content">
+            <h4>解析失败</h4>
+            <div class="stat-value">14</div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-icon">📈</div>
+          <div class="stat-content">
+            <h4>成功率</h4>
+            <div class="stat-value">91%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="failure-analysis">
+        <h4>常见解析失败原因：</h4>
+        <div class="failure-reason">
+          <strong>1. 格式偏离：</strong>AI 没有严格按照要求的格式输出
+        </div>
+        <div class="failure-reason">
+          <strong>2. 多行用例：</strong>单个测试用例跨越多行
+        </div>
+        <div class="failure-reason">
+          <strong>3. 字段缺失：</strong>缺少"操作"或"预期"部分
+        </div>
+        <div class="failure-reason">
+          <strong>4. 非用例内容：</strong>AI 添加了说明文字或总结
+        </div>
+      </div>
+
+      <div class="improvement-tips">
+        <h4>提升解析成功率的方法：</h4>
+        <ul>
+          <li><strong>优化提示词：</strong>在提示词中强调格式的重要性</li>
+          <li><strong>增加示例：</strong>给 AI 提供标准格式的样例</li>
+          <li><strong>扩展正则：</strong>支持更多格式变体</li>
+          <li><strong>后处理：</strong>对解析失败的行进行二次处理</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="screen">
+      <h2>测试你的理解</h2>
+
+      <div class="quiz-container">
+        <div class="quiz-question">
+          <p><strong>下面哪个文本能被系统的正则表达式成功解析？</strong></p>
+
+          <div class="quiz-options">
+            <label class="quiz-option correct">
+              <input type="radio" name="q5" value="a">
+              * 用例：用户注册 - 操作：填写表单提交 - 预期：显示注册成功
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q5" value="b">
+              测试用例：用户注册，操作：填写表单提交，预期：显示注册成功
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q5" value="c">
+              用例名称：用户注册 | 操作步骤：填写表单提交 | 预期结果：显示注册成功
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="q5" value="d">
+              用户注册：填写表单提交 -> 显示注册成功
+            </label>
+          </div>
+
+          <div class="quiz-explanation">
+            <p><strong>正确！</strong> 选项A符合正则表达式的模式：以列表符号开头，然后是"用例：...操作：...预期：..."的格式。其他选项都使用了不同的分隔符或结构，无法被当前的正则表达式匹配。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-hint">
+        <p>👆 掌握了数据提取，最后来学习如何排查问题和扩展功能</p>
+      </div>
+    </div>
+  </div>
+</section>

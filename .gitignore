@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Pipeline artifacts & cache
+artifacts/
+prompt_cache/
+output/
+
+# Intermediate / generated files
+parsed_llm_cases.json
+progress.txt
+prompt_chunks.txt
+tmp_table_preview.txt
+requirements.json
+requirements.md
+requirements_prompt.json
+test_cases.txt
+
+# User-specific config (use sample as template)
+pipeline_config.json
+
+# Source data (binary, too large for git)
+source/
+
+# Claude Code / OMC state
+.claude/
+.omc/
