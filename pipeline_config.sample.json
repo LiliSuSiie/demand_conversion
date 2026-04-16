@@ -22,6 +22,10 @@
   "batch": {
     "batch_size": 5
   },
+  "output": {
+    "version_prefix": "未知版本",
+    "assignee": "liwenqiu"
+  },
   "flags": {
     "resume": false,
     "dry_run": true,

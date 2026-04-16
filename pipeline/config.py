@@ -47,11 +47,18 @@ class ExecutionFlags:
 
 
 @dataclass
+class OutputConfig:
+    version_prefix: str = "未知版本"
+    assignee: str = "liwenqiu"
+
+
+@dataclass
 class PipelineConfig:
     paths: PathsConfig
     llm: LLMConfig
     batch: BatchConfig
     flags: ExecutionFlags
+    output: OutputConfig = field(default_factory=OutputConfig)
 
     @classmethod
     def from_dict(cls, payload: Dict[str, Any], root: Optional[Path] = None) -> "PipelineConfig":
@@ -60,6 +67,7 @@ class PipelineConfig:
         llm_payload = payload.get("llm", {})
         batch_payload = payload.get("batch", {})
         flags_payload = payload.get("flags", {})
+        output_payload = payload.get("output", {})
 
         artifacts_dir_rel = Path(paths_payload.get("artifacts_dir", "artifacts"))
         responses_dir_rel = Path(paths_payload.get("responses_dir", str(artifacts_dir_rel / "responses")))
@@ -106,7 +114,12 @@ class PipelineConfig:
             skip_llm=bool(flags_payload.get("skip_llm", False)),
         )
 
-        return cls(paths=paths, llm=llm, batch=batch, flags=flags)
+        output = OutputConfig(
+            version_prefix=str(output_payload.get("version_prefix", "未知版本")),
+            assignee=str(output_payload.get("assignee", "liwenqiu")),
+        )
+
+        return cls(paths=paths, llm=llm, batch=batch, flags=flags, output=output)
 
 
 def load_config(config_path: Optional[Path] = None) -> PipelineConfig:

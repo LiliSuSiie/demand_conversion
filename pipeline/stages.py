@@ -121,6 +121,16 @@ class PipelineStages:
             parser = LLMOutputParser(text)
             cases.extend(parser.parse())
 
+        version_prefix = self.config.output.version_prefix
+        for case in cases:
+            module = (case.module or "").strip()
+            if module.startswith("/"):
+                case.module = f"/{version_prefix}{module}"
+            elif module:
+                case.module = f"/{version_prefix}/{module}"
+            else:
+                case.module = f"/{version_prefix}"
+
         cases_payload = {
             "cases": [case.normalize().__dict__ for case in cases],
             "total": len(cases),
@@ -137,7 +147,7 @@ class PipelineStages:
             logger.info("Skipping Excel export because dry_run is enabled")
             return
 
-        rows = cases_to_dataframe_rows(cases)
+        rows = cases_to_dataframe_rows(cases, assignee=self.config.output.assignee)
         if rows:
             print(
                 "Writing %d rows to %s" % (len(rows), self.config.paths.output_excel)

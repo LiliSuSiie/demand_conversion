@@ -3,7 +3,7 @@ from typing import Iterable, List, Optional
 from case_models import TestCase
 
 
-def cases_to_dataframe_rows(cases: Iterable[TestCase]) -> List[dict]:
+def cases_to_dataframe_rows(cases: Iterable[TestCase], *, assignee: str = "liwenqiu") -> List[dict]:
     rows = []
     for case in cases:
         normalized = case.normalize()
@@ -18,7 +18,7 @@ def cases_to_dataframe_rows(cases: Iterable[TestCase]) -> List[dict]:
                 "编辑模式": "STEP",
                 "备注": None,
                 "用例状态": "未开始",
-                "责任人": "liwenqiu",
+                "责任人": assignee,
                 "用例等级": "P1",
             }
         )
