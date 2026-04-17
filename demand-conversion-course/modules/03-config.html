@@ -39,6 +39,11 @@
               <span class="config-name">flags</span>
               <div class="config-desc">执行开关配置</div>
             </div>
+            <div class="config-child">
+              <div class="config-icon">🏷️</div>
+              <span class="config-name">output</span>
+              <div class="config-desc">输出元数据配置（版本、责任人）</div>
+            </div>
           </div>
         </div>
       </div>
@@ -63,6 +68,10 @@
   "flags": {
     "resume": false,
     "dry_run": false
+  },
+  "output": {
+    "version_prefix": "v1.3.7",
+    "assignee": "liwenqiu"
   }
 }</code></pre>
         </div>
@@ -73,6 +82,7 @@
             <li><strong>llm：</strong>"连这个 AI 服务，用这个模型"</li>
             <li><strong>batch：</strong>"每次处理 8 个需求"</li>
             <li><strong>flags：</strong>"要不要断点续传，要不要真正执行"</li>
+            <li><strong>output：</strong>"测试用例的版本号前缀是什么，负责人是谁"</li>
           </ul>
         </div>
       </div>
