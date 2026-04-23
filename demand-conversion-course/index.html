@@ -456,6 +456,11 @@
               <span class="config-name">flags</span>
               <div class="config-desc">执行开关配置</div>
             </div>
+            <div class="config-child">
+              <div class="config-icon">🏷️</div>
+              <span class="config-name">output</span>
+              <div class="config-desc">输出元数据配置（版本、责任人）</div>
+            </div>
           </div>
         </div>
       </div>
@@ -480,6 +485,10 @@
   "flags": {
     "resume": false,
     "dry_run": false
+  },
+  "output": {
+    "version_prefix": "v1.3.7",
+    "assignee": "liwenqiu"
   }
 }</code></pre>
         </div>
@@ -490,6 +499,7 @@
             <li><strong>llm：</strong>"连这个 AI 服务，用这个模型"</li>
             <li><strong>batch：</strong>"每次处理 8 个需求"</li>
             <li><strong>flags：</strong>"要不要断点续传，要不要真正执行"</li>
+            <li><strong>output：</strong>"测试用例的版本号前缀是什么，负责人是谁"</li>
           </ul>
         </div>
       </div>
@@ -656,6 +666,20 @@
   }
 }</code></pre>
           <p>切换模型，独立输出目录，对比效果</p>
+        </div>
+
+        <div class="scenario-card">
+          <h4>🏷️ 多版本输出</h4>
+          <pre><code>{
+  "output": {
+    "version_prefix": "v2.0.0",
+    "assignee": "zhangsan"
+  },
+  "paths": {
+    "output_excel": "output/v2_test_cases.xlsx"
+  }
+}</code></pre>
+          <p>每次迭代用不同版本号，测试用例模块路径自动带版本前缀，责任人也可灵活指定</p>
         </div>
       </div>
     </div>
@@ -1137,11 +1161,44 @@
             <p>创建 TestCase 对象，准备导出</p>
           </div>
         </div>
+
+        <div class="pipeline-arrow">⬇️</div>
+
+        <div class="pipeline-step">
+          <div class="step-number">6</div>
+          <div class="step-content">
+            <h4>版本前缀注入</h4>
+            <p>根据 <code>output.version_prefix</code> 配置，自动为每条用例的模块路径加上版本号</p>
+          </div>
+        </div>
       </div>
 
       <div class="code-translation">
         <div class="code-side">
-          <h4>解析核心代码：</h4>
+          <h4>版本前缀处理代码：</h4>
+          <pre><code>version_prefix = self.config.output.version_prefix
+
+for case in cases:
+    module = (case.module or "").strip()
+    if module.startswith("/"):
+        # "/登录" → "/v1.3.7/登录"
+        case.module = f"/{version_prefix}{module}"
+    elif module:
+        # "登录" → "/v1.3.7/登录"
+        case.module = f"/{version_prefix}/{module}"
+    else:
+        # 空模块 → "/v1.3.7"
+        case.module = f"/{version_prefix}"</code></pre>
+        </div>
+        <div class="english-side">
+          <h4>为什么需要版本前缀：</h4>
+          <ul>
+            <li><strong>多迭代管理：</strong>v1.3.7 和 v2.0.0 的用例可以在同一个测试平台里区分</li>
+            <li><strong>自动拼接：</strong>AI 生成的模块路径不需要手动加版本，配置一次全部自动处理</li>
+            <li><strong>格式容错：</strong>无论 AI 输出的路径有没有前导斜杠，代码都能正确处理</li>
+          </ul>
+        </div>
+      </div>
           <pre><code>LLM_CONVERT_REGEX = re.compile(
     r"^[•*-]\s*用例：(?P&lt;name&gt;.+?)\s*-\s*操作：(?P&lt;operation&gt;.+?)\s*-\s*预期：(?P&lt;expected&gt;.+?)$",
     re.MULTILINE
