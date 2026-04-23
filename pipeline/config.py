@@ -50,6 +50,7 @@ class ExecutionFlags:
 class OutputConfig:
     version_prefix: str = "未知版本"
     assignee: str = "liwenqiu"
+    prompt_context: str = ""
 
 
 @dataclass
@@ -117,6 +118,7 @@ class PipelineConfig:
         output = OutputConfig(
             version_prefix=str(output_payload.get("version_prefix", "未知版本")),
             assignee=str(output_payload.get("assignee", "liwenqiu")),
+            prompt_context=str(output_payload.get("prompt_context", "")),
         )
 
         return cls(paths=paths, llm=llm, batch=batch, flags=flags, output=output)

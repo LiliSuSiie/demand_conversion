@@ -20,7 +20,10 @@ _HEADER_DESCRIPTIONS = {"描述", "内容", "说明", "需求描述"}
 
 
 def parse_requirement_tables(docx_path: Union[str, Path]) -> List[RequirementBlock]:
-    """Parse requirement tables from ``docx_path`` into normalized blocks."""
+    """Parse requirement tables from ``docx_path`` into normalized blocks.
+
+    Falls back to paragraph-based parsing when no table blocks are found.
+    """
 
     document = Document(Path(docx_path))
     blocks: List[RequirementBlock] = []
@@ -39,7 +42,80 @@ def parse_requirement_tables(docx_path: Union[str, Path]) -> List[RequirementBlo
         if table_blocks:
             blocks.extend(table_blocks)
 
-    return [normalize_block(block) for block in blocks if block.title and block.description]
+    normalized = [normalize_block(block) for block in blocks if block.title and block.description]
+    if normalized:
+        return normalized
+
+    # No table-based blocks found — fall back to paragraph-based parsing.
+    return _parse_requirement_paragraphs(document)
+
+
+def _parse_requirement_paragraphs(document) -> List[RequirementBlock]:
+    """Parse a paragraph-structured (non-table) requirements document.
+
+    Dynamically detects the minimum heading depth in the document and uses it
+    as the module-context threshold.  Top-level headings become module context;
+    all deeper headings each become a RequirementBlock.
+    """
+
+    def _heading_depth(text: str) -> Optional[int]:
+        stripped = text.lstrip("*-# ")
+        if not _ModuleHeading.match(stripped):
+            return None
+        section_part = stripped.split()[0].rstrip(".")
+        return len(section_part.split("."))
+
+    # First pass: find minimum heading depth to set context threshold.
+    min_depth: Optional[int] = None
+    for para in document.paragraphs:
+        d = _heading_depth(para.text.strip())
+        if d is not None and (min_depth is None or d < min_depth):
+            min_depth = d
+    if min_depth is None:
+        return []
+
+    blocks: List[RequirementBlock] = []
+    parent_module: str = "未分类"
+    current_heading: Optional[str] = None
+    current_paragraphs: List[str] = []
+    block_index = 0
+
+    def _flush() -> None:
+        nonlocal block_index
+        if current_heading and current_paragraphs:
+            description = "\n".join(current_paragraphs)
+            blocks.append(
+                RequirementBlock(
+                    module=parent_module,
+                    title=current_heading,
+                    description=description,
+                    notes=None,
+                    block_id=f"P{block_index:03d}-001",
+                    table_index=0,
+                    row_index=block_index,
+                    segments=_segment_text(description),
+                )
+            )
+            block_index += 1
+
+    for para in document.paragraphs:
+        text = para.text.strip()
+        if not text:
+            continue
+
+        depth = _heading_depth(text)
+        if depth is not None:
+            _flush()
+            if depth <= min_depth:
+                parent_module = text
+            current_heading = text
+            current_paragraphs = []
+        else:
+            if current_heading is not None:
+                current_paragraphs.append(text)
+
+    _flush()
+    return [normalize_block(b) for b in blocks if b.title and b.description]
 
 
 def _segment_text(text: str) -> Optional[List[str]]:

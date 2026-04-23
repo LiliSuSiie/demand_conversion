@@ -79,7 +79,7 @@ class PipelineStages:
         return blocks
 
     def generate_prompts(self, blocks: List[RequirementBlock]) -> List[str]:
-        generator = PromptGenerator(blocks)
+        generator = PromptGenerator(blocks, context=self.config.output.prompt_context)
         chunks = generator.chunk(self.config.batch.batch_size)
         chunk_dir = self.artifacts / "prompt_chunks"
         chunk_dir.mkdir(parents=True, exist_ok=True)

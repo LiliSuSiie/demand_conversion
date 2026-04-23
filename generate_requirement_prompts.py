@@ -87,9 +87,14 @@ INGEST_HELP = """### Convert.txt 解析提示
 class PromptChunk:
     index: int
     requirements: Sequence[RequirementBlock]
+    context: str = ""
 
     def render(self) -> str:
         lines = [f"### Chunk {self.index} ({len(self.requirements)} requirements)"]
+        if self.context:
+            lines.append("### 业务流程背景（供参考，用于生成端到端测试用例）")
+            lines.append(self.context.strip())
+            lines.append("")
         lines.append(PROMPT_HEADER.strip())
         for block in self.requirements:
             lines.append(
@@ -114,13 +119,18 @@ class PromptChunk:
 
 
 class PromptGenerator:
-    def __init__(self, blocks: Sequence[RequirementBlock]):
+    def __init__(self, blocks: Sequence[RequirementBlock], context: str = ""):
         self.blocks = list(blocks)
+        self.context = context
 
     def chunk(self, batch_size: int) -> List[PromptChunk]:
         chunks: List[PromptChunk] = []
         for idx in range(0, len(self.blocks), batch_size):
-            chunk = PromptChunk(index=idx // batch_size + 1, requirements=self.blocks[idx : idx + batch_size])
+            chunk = PromptChunk(
+                index=idx // batch_size + 1,
+                requirements=self.blocks[idx : idx + batch_size],
+                context=self.context,
+            )
             chunks.append(chunk)
         return chunks
 
