@@ -20,6 +20,15 @@ test_cases.txt
 
 # User-specific config (use sample as template)
 pipeline_config.json
+.env
+.env.*
+*.local.json
+*.secret
+*.credentials
+*.key
+*.pem
+*.p12
+*.pfx
 
 # Source data (binary, too large for git)
 source/
