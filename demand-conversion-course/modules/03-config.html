@@ -53,24 +53,27 @@
           <h4>配置文件长这样：</h4>
           <pre><code>{
   "paths": {
-    "docx": "source/requirements.docx",
+    "docx": "source/eedsv1.9.0.docx",
     "artifacts_dir": "artifacts",
-    "output_excel": "output/test_cases.xlsx"
+    "prompt_cache_dir": "prompt_cache",
+    "responses_dir": "artifacts/responses",
+    "output_excel": "output/output_test_cases.xlsx"
   },
   "llm": {
     "provider": "openai_compatible",
     "base_url": "https://yunwu.ai/v1",
-    "model": "gpt-5.3-codex"
+    "model": "claude-opus-4-1-20250805",
+    "options": {"endpoint": "chat_completions"}
   },
   "batch": {
-    "batch_size": 8
+    "batch_size": 5
   },
   "flags": {
     "resume": false,
     "dry_run": false
   },
   "output": {
-    "version_prefix": "v1.3.7",
+    "version_prefix": "v1.9.0",
     "assignee": "liwenqiu"
   }
 }</code></pre>
@@ -80,7 +83,7 @@
           <ul>
             <li><strong>paths：</strong>"去这些地方找文件，结果放这里"</li>
             <li><strong>llm：</strong>"连这个 AI 服务，用这个模型"</li>
-            <li><strong>batch：</strong>"每次处理 8 个需求"</li>
+            <li><strong>batch：</strong>"每次处理 5 个需求"</li>
             <li><strong>flags：</strong>"要不要断点续传，要不要真正执行"</li>
             <li><strong>output：</strong>"测试用例的版本号前缀是什么，负责人是谁"</li>
           </ul>
@@ -142,7 +145,7 @@
         </div>
         <div class="english-side">
           <h4>实际效果：</h4>
-          <p>即使配置文件里写着 <code>"dry_run": false</code>，只要你在命令行加了 <code>--dry-run</code>，系统就会按干跑模式执行。</p>
+          <p>即使配置文件里写着 <code>"dry_run": false</code>，只要你在命令行加了 <code>--dry-run</code>，系统就会只跑需求解析和 prompt 生成，不调用 LLM，也不会复用旧 responses 继续生成用例。</p>
           <p>这样既保证了配置的稳定性，又给了临时调整的灵活性。</p>
         </div>
       </div>
@@ -163,9 +166,9 @@
             <pre><code>{
   "provider": "openai_compatible",
   "base_url": "https://yunwu.ai/v1",
-  "model": "gpt-5.3-codex",
+  "model": "claude-opus-4-1-20250805",
   "options": {
-    "endpoint": "responses"
+    "endpoint": "chat_completions"
   }
 }</code></pre>
           </div>
@@ -198,7 +201,7 @@
           <div class="provider-config">
             <pre><code>{
   "provider": "anthropic",
-  "model": "claude-3-sonnet",
+  "model": "claude-sonnet-4-5",
   "api_key_env": "ANTHROPIC_API_KEY"
 }</code></pre>
           </div>
@@ -221,7 +224,7 @@
   },
   "batch": {"batch_size": 2}
 }</code></pre>
-          <p>不调用真实 LLM，快速验证流程，小批量测试</p>
+          <p>不调用真实 LLM，快速验证 Word 解析和 prompt 生成</p>
         </div>
 
         <div class="scenario-card">

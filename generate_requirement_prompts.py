@@ -232,7 +232,7 @@ def validate_docx(docx_path: Path, json_path: Path, preview_path: Path, encoding
         format=PreviewFormat.PRETTY,
     )
 
-    print(f"✅ Validated DOCX: {docx_path}\n- JSON: {json_path}\n- Preview: {preview_path}")
+    print(f"Validated DOCX: {docx_path}\n- JSON: {json_path}\n- Preview: {preview_path}")
 
 
 def ingest_output(args: argparse.Namespace) -> None:

@@ -18,7 +18,26 @@
         </div>
         <div class="english-side">
           <h4>人话翻译：</h4>
-          <p>运行流水线程序，按照配置文件的设置，先预览一遍结果不要真正执行</p>
+          <p>运行完整流水线，并额外写出需求解析预览文件。注意：<code>--preview</code> 不会跳过 LLM；只想检查 Word 解析和 prompt 生成时，要加 <code>--dry-run</code>。</p>
+        </div>
+      </div>
+
+      <div class="run-stats">
+        <div class="stat-pill">
+          <span class="stat-label">当前源文件</span>
+          <strong>source/eedsv1.9.0.docx</strong>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">需求块</span>
+          <strong>11</strong>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Prompt 分块</span>
+          <strong>3</strong>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">导出用例</span>
+          <strong>141</strong>
         </div>
       </div>
     </div>
@@ -88,22 +107,22 @@
           <strong>Pipeline:</strong> 配置正常！开始第一阶段：解析 Word 文档
         </div>
         <div class="chat-message parser">
-          <strong>文档解析器:</strong> 找到 Word 文件，开始提取表格内容...
+          <strong>文档解析器:</strong> 找到 Word 文件，优先识别需求表格；如果没有有效表格，就切到段落标题解析...
         </div>
         <div class="chat-message parser">
-          <strong>文档解析器:</strong> 解析完成！发现 47 个需求块
+          <strong>文档解析器:</strong> 解析完成！v1.9.0 文档发现 11 个需求块
         </div>
         <div class="chat-message pipeline">
           <strong>Pipeline:</strong> 第二阶段：生成 AI 提示词
         </div>
         <div class="chat-message prompter">
-          <strong>提示词生成器:</strong> 按每批 8 个需求分组，生成 6 个提示词文件
+          <strong>提示词生成器:</strong> 按每批 5 个需求分组，生成 3 个提示词文件
         </div>
         <div class="chat-message pipeline">
           <strong>Pipeline:</strong> 第三阶段：调用 LLM
         </div>
         <div class="chat-message llm">
-          <strong>LLM 客户端:</strong> 连接到 gpt-5.3-codex，开始批量处理...
+          <strong>LLM 客户端:</strong> 连接到 openai_compatible 服务，使用 claude-opus-4-1-20250805，开始批量处理...
         </div>
         <div class="chat-message llm">
           <strong>LLM 客户端:</strong> 所有批次处理完成！
@@ -112,7 +131,7 @@
           <strong>Pipeline:</strong> 第四阶段：解析测试用例
         </div>
         <div class="chat-message parser">
-          <strong>用例解析器:</strong> 从 AI 回复中提取出 203 条测试用例
+          <strong>用例解析器:</strong> 从 AI 回复中提取出 141 条测试用例
         </div>
         <div class="chat-message pipeline">
           <strong>Pipeline:</strong> 第五阶段：导出 Excel
@@ -150,7 +169,7 @@
           </div>
 
           <div class="quiz-explanation">
-            <p><strong>正确！</strong> Pipeline 有智能的断点恢复功能。它会检查 <code>artifacts/pipeline_state.json</code> 文件，看哪些阶段已经完成，然后从失败的地方继续。这就是为什么配置中有 <code>--resume</code> 参数。</p>
+            <p><strong>正确！</strong> 使用 <code>--resume</code> 时，Pipeline 会检查 <code>artifacts/pipeline_state.json</code>，跳过已完成阶段；LLM 层还会读取 <code>prompt_cache/chunk_*.json</code>，避免重复调用已缓存的批次。</p>
           </div>
         </div>
       </div>

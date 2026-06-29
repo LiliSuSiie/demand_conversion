@@ -18,7 +18,7 @@
 
       <div class="debugging-flowchart">
         <div class="debug-step">
-          <div class="step-icon">🔍</div>
+          <div class="step-icon">1</div>
           <h4>1. 确定症状</h4>
           <p>程序在哪个阶段停止？有什么错误信息？</p>
         </div>
@@ -26,7 +26,7 @@
         <div class="debug-arrow">⬇️</div>
 
         <div class="debug-step">
-          <div class="step-icon">📋</div>
+          <div class="step-icon">2</div>
           <h4>2. 检查状态文件</h4>
           <p>查看 <code>artifacts/pipeline_state.json</code> 了解进度</p>
         </div>
@@ -34,7 +34,7 @@
         <div class="debug-arrow">⬇️</div>
 
         <div class="debug-step">
-          <div class="step-icon">📁</div>
+          <div class="step-icon">3</div>
           <h4>3. 验证产物文件</h4>
           <p>检查对应阶段的输出文件是否存在且有效</p>
         </div>
@@ -42,7 +42,7 @@
         <div class="debug-arrow">⬇️</div>
 
         <div class="debug-step">
-          <div class="step-icon">⚙️</div>
+          <div class="step-icon">4</div>
           <h4>4. 验证配置</h4>
           <p>确认配置文件语法正确，路径存在</p>
         </div>
@@ -50,7 +50,7 @@
         <div class="debug-arrow">⬇️</div>
 
         <div class="debug-step">
-          <div class="step-icon">🤖</div>
+          <div class="step-icon">5</div>
           <h4>5. 测试外部依赖</h4>
           <p>验证 LLM 接口、文件权限等外部因素</p>
         </div>
@@ -60,20 +60,20 @@
         <h4>常用诊断命令：</h4>
         <div class="command-list">
           <div class="command-item">
-            <code>python -c "from pipeline.config import load_config; print(load_config('pipeline_config.json'))"</code>
+            <code>&amp; 'E:\ProgramData\CondaConfig\envs\demand_conversion\python.exe' -c "from pipeline.config import load_config; print(load_config())"</code>
             <span class="command-desc">测试配置文件是否能正确加载</span>
           </div>
           <div class="command-item">
-            <code>ls -la artifacts/</code>
+            <code>Get-ChildItem artifacts</code>
             <span class="command-desc">查看中间产物文件状态</span>
           </div>
           <div class="command-item">
-            <code>head -20 artifacts/requirements.json</code>
+            <code>Get-Content artifacts/requirements_preview.md -TotalCount 40</code>
             <span class="command-desc">预览需求解析结果</span>
           </div>
           <div class="command-item">
-            <code>python pipeline_runner.py --dry-run --preview</code>
-            <span class="command-desc">干跑验证流程，不调用外部服务</span>
+            <code>&amp; 'E:\ProgramData\CondaConfig\envs\demand_conversion\python.exe' pipeline_runner.py --config pipeline_config.json --dry-run --preview</code>
+            <span class="command-desc">干跑验证需求解析和 prompt 生成，不调用外部服务</span>
           </div>
         </div>
       </div>
@@ -143,7 +143,7 @@
             <div class="diagnosis">
               <strong>诊断：</strong>
               <ul>
-                <li>查看 <code>responses/chunk_*.txt</code> 检查 AI 输出格式</li>
+                <li>查看 <code>artifacts/responses/chunk_*.txt</code> 检查 AI 输出格式</li>
                 <li>检查正则表达式是否匹配实际输出</li>
                 <li>确认 AI 是否按要求输出</li>
                 <li>检查是否有非标准格式的用例</li>
@@ -190,12 +190,12 @@
           <div class="ext-icon">🔌</div>
           <h4>新增 LLM 提供商</h4>
           <div class="ext-content">
-            <p><strong>位置：</strong><code>pipeline/llm_providers/</code></p>
+            <p><strong>位置：</strong><code>pipeline/llm_providers/</code> 和 <code>factory.py</code></p>
             <p><strong>步骤：</strong></p>
             <ol>
               <li>创建新的 provider 类</li>
               <li>实现统一的接口方法</li>
-              <li>在工厂类中注册</li>
+              <li>在 <code>factory.py</code> 中注册</li>
               <li>更新配置模式</li>
             </ol>
           </div>
@@ -253,25 +253,25 @@
 
       <div class="optimization-tips">
         <div class="tip-item">
-          <div class="tip-icon">⚡</div>
+          <div class="tip-icon">并发</div>
           <h4>并发调优</h4>
           <p>根据 API 限制调整 <code>max_concurrency</code>。太大触发限流，太小速度慢。</p>
         </div>
 
         <div class="tip-item">
-          <div class="tip-icon">🔄</div>
+          <div class="tip-icon">缓存</div>
           <h4>缓存策略</h4>
           <p>相同项目的迭代开发中，大部分提示词会重复，充分利用缓存机制。</p>
         </div>
 
         <div class="tip-item">
-          <div class="tip-icon">📦</div>
+          <div class="tip-icon">批次</div>
           <h4>批次大小</h4>
           <p>调整 <code>batch_size</code>：太小浪费请求，太大降低质量，建议 5-10。</p>
         </div>
 
         <div class="tip-item">
-          <div class="tip-icon">🎯</div>
+          <div class="tip-icon">质量</div>
           <h4>提示词质量</h4>
           <p>高质量的提示词能显著提升解析成功率，减少重试次数。</p>
         </div>

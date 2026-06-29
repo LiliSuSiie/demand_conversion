@@ -2,63 +2,51 @@
   <div class="module-inner">
     <div class="screen">
       <h1>从文本到测试用例</h1>
-      <p>AI 模型回复的是自然语言文本，但我们需要的是结构化的测试用例。这个转换过程就像从一堆散装零件中，按照图纸组装出精密的机械。</p>
-      <p>掌握这个过程，能帮你在处理任何 AI 输出时，都知道如何提取有用的信息。</p>
+      <p>AI 模型回复的是自然语言文本，但最终交付需要稳定的结构化测试用例。这里的关键不是“让 AI 随便写”，而是用严格格式把输出约束到可解析的范围内。</p>
+      <p>当前项目的解析入口是 <code>LLMOutputParser</code>：它先识别 <code>/模块路径</code>，再解析每一行 <code>用例 / 操作 / 预期</code>。</p>
 
       <div class="callout">
-        <strong>💡 为什么要关心文本解析？</strong><br>
-        AI 的输出往往是"接近正确"的文本，如何从中稳定提取结构化数据，决定了你的 AI 应用的可靠性。这是所有 AI 应用的核心挑战。
+        <strong>关键前提</strong><br>
+        用例行必须出现在模块路径之后；如果 AI 只输出“用例：...”而没有前面的 <code>/模块</code> 行，解析器不会把它计入最终结果。
       </div>
     </div>
 
     <div class="screen">
-      <h2>AI 输出的典型格式</h2>
-
-      <p>系统要求 AI 按照特定格式回复，但实际输出往往有细微差异。</p>
+      <h2>AI 输出的可解析格式</h2>
 
       <div class="output-samples">
         <div class="sample ideal">
           <h4>理想输出：</h4>
-          <pre><code>• 用例：登录成功 - 操作：输入正确用户名和密码点击登录 - 预期：跳转到主页面显示欢迎信息
-• 用例：登录失败 - 操作：输入错误密码点击登录 - 预期：显示密码错误提示信息</code></pre>
-          <div class="sample-note success">✅ 完美格式，直接解析</div>
+          <pre><code>/续授信客户
+• 用例：状态多选筛选 - 操作：同时选择【准入拒绝】和【模型通过】后查询 - 预期：列表展示两类状态的数据
+* 用例：合同到期日排序 - 操作：点击合同到期日排序按钮 - 预期：列表按合同到期日升序或降序排列</code></pre>
+          <div class="sample-note success">可解析：模块行 + 支持 • / * / - 三种列表符号</div>
         </div>
 
         <div class="sample variant">
-          <h4>变体1（空格差异）：</h4>
-          <pre><code>•用例：登录成功-操作：输入正确用户名和密码点击登录-预期：跳转到主页面显示欢迎信息
-• 用例：登录失败 -  操作：输入错误密码点击登录  -  预期：显示密码错误提示信息</code></pre>
-          <div class="sample-note warning">⚠️ 空格不一致，需要容错</div>
-        </div>
-
-        <div class="sample variant">
-          <h4>变体2（符号差异）：</h4>
-          <pre><code>- 用例：登录成功 - 操作：输入正确用户名和密码点击登录 - 预期：跳转到主页面显示欢迎信息
-* 用例：登录失败 - 操作：输入错误密码点击登录 - 预期：显示密码错误提示信息</code></pre>
-          <div class="sample-note warning">⚠️ 使用了不同的列表符号</div>
+          <h4>可接受变体：</h4>
+          <pre><code>/进件管理/复核拒绝
+- 用例：未选择原因不可提交 - 操作：选中原因组但不勾选具体原因后提交 - 预期：提示至少选择一个原因选项</code></pre>
+          <div class="sample-note warning">可解析：连字符列表符号也支持</div>
         </div>
 
         <div class="sample broken">
-          <h4>变体3（格式错误）：</h4>
-          <pre><code>测试用例1：登录成功
-操作步骤：输入正确用户名和密码点击登录
-预期结果：跳转到主页面显示欢迎信息
-
-测试用例2：登录失败
-操作：输入错误密码点击登录
-预期：显示密码错误提示信息</code></pre>
-          <div class="sample-note error">❌ 格式完全不同，解析失败</div>
+          <h4>不可解析输出：</h4>
+          <pre><code>测试用例1：未选择原因不可提交
+操作步骤：选中原因组但不勾选具体原因后提交
+预期结果：提示至少选择一个原因选项</code></pre>
+          <div class="sample-note error">不可解析：缺少 /模块 行，字段标签和分隔符也不符合规则</div>
         </div>
       </div>
     </div>
 
     <div class="screen">
-      <h2>正则表达式的威力</h2>
+      <h2>正则表达式拆解</h2>
 
-      <p>系统使用<span class="tooltip" data-tooltip="正则表达式：一种模式匹配语言，能精确描述文本的结构规律">正则表达式</span>来从文本中提取结构化信息。</p>
+      <p>当前解析器逐行处理文本：遇到 <code>/</code> 开头的行就更新当前模块；遇到匹配正则的行就生成一条 <code>TestCase</code>。</p>
 
       <div class="regex-dissection">
-        <h4>解析规则拆解：</h4>
+        <h4>解析规则：</h4>
         <div class="regex-pattern">
           <pre><code>^[•*-]\s*用例：(?P&lt;name&gt;.+?)\s*-\s*操作：(?P&lt;operation&gt;.+?)\s*-\s*预期：(?P&lt;expected&gt;.+?)$</code></pre>
         </div>
@@ -66,45 +54,48 @@
         <div class="regex-parts">
           <div class="regex-part">
             <div class="part-pattern">^[•*-]\s*</div>
-            <div class="part-meaning">行开头的列表符号 + 可选空格</div>
+            <div class="part-meaning">行开头必须是列表符号，后面允许有空格</div>
           </div>
           <div class="regex-part">
-            <div class="part-pattern">用例：(?P&lt;name&gt;.+?)\s*</div>
-            <div class="part-meaning">"用例："后面的内容保存为 name</div>
+            <div class="part-pattern">用例：(?P&lt;name&gt;.+?)</div>
+            <div class="part-meaning">提取用例名称</div>
           </div>
           <div class="regex-part">
-            <div class="part-pattern">-\s*操作：(?P&lt;operation&gt;.+?)\s*</div>
-            <div class="part-meaning">"-操作："后面的内容保存为 operation</div>
+            <div class="part-pattern">-\s*操作：(?P&lt;operation&gt;.+?)</div>
+            <div class="part-meaning">提取操作步骤</div>
           </div>
           <div class="regex-part">
             <div class="part-pattern">-\s*预期：(?P&lt;expected&gt;.+?)$</div>
-            <div class="part-meaning">"-预期："后面的内容保存为 expected</div>
+            <div class="part-meaning">提取预期结果，直到本行结束</div>
           </div>
         </div>
       </div>
 
-      <div class="regex-demo">
-        <h4>匹配演示：</h4>
-        <div class="demo-input">
-          <strong>输入文本：</strong>
-          <pre><code>• 用例：登录成功 - 操作：输入正确用户名和密码点击登录 - 预期：跳转到主页面显示欢迎信息</code></pre>
+      <div class="code-translation">
+        <div class="code-side">
+          <h4>解析代码骨架：</h4>
+          <pre><code>for raw_line in self.text.splitlines():
+    line = raw_line.strip()
+    if line.startswith("/"):
+        current_module = line
+        continue
+
+    match = LLM_CONVERT_REGEX.match(line)
+    if match and current_module:
+        cases.append(TestCase(
+            module=current_module,
+            name=match.group("name").strip(),
+            operation=match.group("operation").strip(),
+            expected=match.group("expected").strip(),
+        ))</code></pre>
         </div>
-        <div class="demo-output">
-          <strong>提取结果：</strong>
-          <div class="extracted-fields">
-            <div class="field">
-              <span class="field-label">name:</span>
-              <span class="field-value">"登录成功"</span>
-            </div>
-            <div class="field">
-              <span class="field-label">operation:</span>
-              <span class="field-value">"输入正确用户名和密码点击登录"</span>
-            </div>
-            <div class="field">
-              <span class="field-label">expected:</span>
-              <span class="field-value">"跳转到主页面显示欢迎信息"</span>
-            </div>
-          </div>
+        <div class="english-side">
+          <h4>这个设计的边界：</h4>
+          <ul>
+            <li><strong>优点：</strong>简单、可预测、不会把普通说明误当成用例</li>
+            <li><strong>代价：</strong>AI 输出必须服从约定格式</li>
+            <li><strong>当前增强：</strong>已经支持 <code>*</code> 和 <code>-</code> 作为列表符号</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -116,151 +107,106 @@
         <div class="pipeline-step">
           <div class="step-number">1</div>
           <div class="step-content">
-            <h4>读取原始文本</h4>
-            <p>从 <code>responses/chunk_*.txt</code> 加载 AI 回复</p>
+            <h4>读取 LLM 响应</h4>
+            <p>从 <code>artifacts/responses/chunk_*.txt</code> 加载 AI 回复</p>
           </div>
         </div>
 
-        <div class="pipeline-arrow">⬇️</div>
+        <div class="pipeline-arrow">→</div>
 
         <div class="pipeline-step">
           <div class="step-number">2</div>
           <div class="step-content">
-            <h4>按行分割</h4>
-            <p>每一行可能包含一个测试用例</p>
+            <h4>识别模块路径</h4>
+            <p>以 <code>/</code> 开头的行作为后续用例的模块上下文</p>
           </div>
         </div>
 
-        <div class="pipeline-arrow">⬇️</div>
+        <div class="pipeline-arrow">→</div>
 
         <div class="pipeline-step">
           <div class="step-number">3</div>
           <div class="step-content">
-            <h4>正则匹配</h4>
-            <p>尝试用预定义规则提取字段</p>
+            <h4>正则匹配用例行</h4>
+            <p>提取名称、操作、预期三个字段</p>
           </div>
         </div>
 
-        <div class="pipeline-arrow">⬇️</div>
+        <div class="pipeline-arrow">→</div>
 
         <div class="pipeline-step">
           <div class="step-number">4</div>
           <div class="step-content">
-            <h4>数据清洗</h4>
-            <p>去除多余空格，标准化格式</p>
+            <h4>版本前缀注入</h4>
+            <p>把 <code>output.version_prefix</code> 拼进模块路径</p>
           </div>
         </div>
 
-        <div class="pipeline-arrow">⬇️</div>
+        <div class="pipeline-arrow">→</div>
 
         <div class="pipeline-step">
           <div class="step-number">5</div>
           <div class="step-content">
-            <h4>结构化对象</h4>
-            <p>创建 TestCase 对象，准备导出</p>
-          </div>
-        </div>
-
-        <div class="pipeline-arrow">⬇️</div>
-
-        <div class="pipeline-step">
-          <div class="step-number">6</div>
-          <div class="step-content">
-            <h4>版本前缀注入</h4>
-            <p>根据 <code>output.version_prefix</code> 配置，自动为每条用例的模块路径加上版本号</p>
+            <h4>导出 Excel</h4>
+            <p>写入 <code>output/output_test_cases.xlsx</code></p>
           </div>
         </div>
       </div>
 
       <div class="code-translation">
         <div class="code-side">
-          <h4>版本前缀处理代码：</h4>
+          <h4>版本前缀处理：</h4>
           <pre><code>version_prefix = self.config.output.version_prefix
 
 for case in cases:
     module = (case.module or "").strip()
     if module.startswith("/"):
-        # "/登录" → "/v1.3.7/登录"
         case.module = f"/{version_prefix}{module}"
     elif module:
-        # "登录" → "/v1.3.7/登录"
         case.module = f"/{version_prefix}/{module}"
     else:
-        # 空模块 → "/v1.3.7"
         case.module = f"/{version_prefix}"</code></pre>
         </div>
         <div class="english-side">
-          <h4>为什么需要版本前缀：</h4>
-          <ul>
-            <li><strong>多迭代管理：</strong>v1.3.7 和 v2.0.0 的用例可以在同一个测试平台里区分</li>
-            <li><strong>自动拼接：</strong>AI 生成的模块路径不需要手动加版本，配置一次全部自动处理</li>
-            <li><strong>格式容错：</strong>无论 AI 输出的路径有没有前导斜杠，代码都能正确处理</li>
-          </ul>
-        </div>
-      </div>
-          <pre><code>LLM_CONVERT_REGEX = re.compile(
-    r"^[•*-]\s*用例：(?P&lt;name&gt;.+?)\s*-\s*操作：(?P&lt;operation&gt;.+?)\s*-\s*预期：(?P&lt;expected&gt;.+?)$",
-    re.MULTILINE
-)
-
-def parse_test_cases(text: str) -> List[TestCase]:
-    cases = []
-    for match in LLM_CONVERT_REGEX.finditer(text):
-        case = TestCase(
-            name=match.group('name').strip(),
-            operation=match.group('operation').strip(),
-            expected=match.group('expected').strip()
-        )
-        cases.append(case)
-    return cases</code></pre>
-        </div>
-        <div class="english-side">
-          <h4>关键设计考量：</h4>
-          <ul>
-            <li><strong>容错性：</strong><code>\s*</code> 匹配可选空格，应对格式差异</li>
-            <li><strong>贪婪控制：</strong><code>.+?</code> 非贪婪匹配，避免跨字段错误</li>
-            <li><strong>清理：</strong><code>strip()</code> 去除首尾空格</li>
-            <li><strong>多行模式：</strong><code>re.MULTILINE</code> 支持每行独立匹配</li>
-          </ul>
+          <h4>实际效果：</h4>
+          <p><code>/续授信客户</code> 会变成 <code>/v1.9.0/续授信客户</code>，便于不同需求版本在测试平台里隔离管理。</p>
         </div>
       </div>
     </div>
 
     <div class="screen">
-      <h2>解析成功率监控</h2>
-
-      <p>系统会统计解析成功率，帮助你发现 AI 输出质量问题。</p>
+      <h2>当前 v1.9.0 运行结果</h2>
 
       <div class="parse-stats">
         <div class="stat-item">
-          <div class="stat-icon">📊</div>
+          <div class="stat-icon">DOCX</div>
           <div class="stat-content">
-            <h4>总行数</h4>
-            <div class="stat-value">156</div>
+            <h4>需求块</h4>
+            <div class="stat-value">11</div>
           </div>
         </div>
 
         <div class="stat-item">
-          <div class="stat-icon">✅</div>
+          <div class="stat-icon">PROMPT</div>
           <div class="stat-content">
-            <h4>成功解析</h4>
-            <div class="stat-value">142</div>
+            <h4>Prompt 分块</h4>
+            <div class="stat-value">3</div>
           </div>
         </div>
 
         <div class="stat-item">
-          <div class="stat-icon">❌</div>
+          <div class="stat-icon">CASE</div>
           <div class="stat-content">
-            <h4>解析失败</h4>
-            <div class="stat-value">14</div>
+            <h4>测试用例</h4>
+            <div class="stat-value">141</div>
           </div>
         </div>
 
         <div class="stat-item">
-          <div class="stat-icon">📈</div>
+          <div class="stat-icon">XLSX</div>
           <div class="stat-content">
-            <h4>成功率</h4>
-            <div class="stat-value">91%</div>
+            <h4>Excel 数据行</h4>
+            <div class="stat-value">141</div>
           </div>
         </div>
       </div>
@@ -268,27 +214,17 @@ def parse_test_cases(text: str) -> List[TestCase]:
       <div class="failure-analysis">
         <h4>常见解析失败原因：</h4>
         <div class="failure-reason">
-          <strong>1. 格式偏离：</strong>AI 没有严格按照要求的格式输出
+          <strong>1. 缺少模块行：</strong>AI 没有输出 <code>/模块路径</code>
         </div>
         <div class="failure-reason">
-          <strong>2. 多行用例：</strong>单个测试用例跨越多行
+          <strong>2. 单条用例跨多行：</strong>当前正则按行匹配，跨行字段会被漏掉
         </div>
         <div class="failure-reason">
-          <strong>3. 字段缺失：</strong>缺少"操作"或"预期"部分
+          <strong>3. 字段标签变化：</strong>例如写成“操作步骤”或“预期结果”
         </div>
         <div class="failure-reason">
-          <strong>4. 非用例内容：</strong>AI 添加了说明文字或总结
+          <strong>4. 说明文字过多：</strong>非用例内容不会被解析
         </div>
-      </div>
-
-      <div class="improvement-tips">
-        <h4>提升解析成功率的方法：</h4>
-        <ul>
-          <li><strong>优化提示词：</strong>在提示词中强调格式的重要性</li>
-          <li><strong>增加示例：</strong>给 AI 提供标准格式的样例</li>
-          <li><strong>扩展正则：</strong>支持更多格式变体</li>
-          <li><strong>后处理：</strong>对解析失败的行进行二次处理</li>
-        </ul>
       </div>
     </div>
 
@@ -297,12 +233,12 @@ def parse_test_cases(text: str) -> List[TestCase]:
 
       <div class="quiz-container">
         <div class="quiz-question">
-          <p><strong>下面哪个文本能被系统的正则表达式成功解析？</strong></p>
+          <p><strong>下面哪个文本能被系统成功解析为测试用例？</strong></p>
 
           <div class="quiz-options">
             <label class="quiz-option correct">
               <input type="radio" name="q5" value="a">
-              * 用例：用户注册 - 操作：填写表单提交 - 预期：显示注册成功
+              /注册模块<br>* 用例：用户注册 - 操作：填写表单提交 - 预期：显示注册成功
             </label>
             <label class="quiz-option">
               <input type="radio" name="q5" value="b">
@@ -319,13 +255,13 @@ def parse_test_cases(text: str) -> List[TestCase]:
           </div>
 
           <div class="quiz-explanation">
-            <p><strong>正确！</strong> 选项A符合正则表达式的模式：以列表符号开头，然后是"用例：...操作：...预期：..."的格式。其他选项都使用了不同的分隔符或结构，无法被当前的正则表达式匹配。</p>
+            <p><strong>正确！</strong> 选项 A 同时满足两个条件：先给出 <code>/注册模块</code>，再给出符合 <code>用例 - 操作 - 预期</code> 结构的用例行。</p>
           </div>
         </div>
       </div>
 
       <div class="nav-hint">
-        <p>👆 掌握了数据提取，最后来学习如何排查问题和扩展功能</p>
+        <p>选择答案看解释，然后进入最后一章学习排错和扩展策略</p>
       </div>
     </div>
   </div>

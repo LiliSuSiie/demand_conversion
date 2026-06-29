@@ -246,13 +246,10 @@ async def run_pipeline(config: PipelineConfig, state: PipelineState) -> None:
 
     responses: List[str]
     if config.flags.dry_run:
-        logger.info("Dry-run enabled; skipping LLM stage")
-        cached = stages.load_responses()
-        if cached:
-            logger.info("Using cached LLM responses (%d files)", len(cached))
-            responses = cached
-        else:
-            responses = []
+        logger.info("Dry-run enabled; skipping LLM response loading and downstream case parsing")
+        for stage_name in ("llm", "cases", "excel"):
+            state.reset_stage(stage_name)
+        responses = []
     elif should_resume("llm"):
         logger.info("Skipping LLM stage (resume enabled)")
         loaded = stages.load_responses()

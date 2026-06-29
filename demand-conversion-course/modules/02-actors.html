@@ -53,6 +53,7 @@
             <strong>主要职责：</strong>
             <ul>
               <li>解析 Word 表格</li>
+              <li>在无有效表格时解析段落标题</li>
               <li>提取需求标题和描述</li>
               <li>处理空行和合并逻辑</li>
               <li>生成结构化需求对象</li>
@@ -115,13 +116,13 @@
           <strong>指挥官:</strong> 大家好，今天要处理一个新的需求文档
         </div>
         <div class="chat-message config">
-          <strong>配置管家:</strong> 收到！配置文件已加载，LLM 设置是 gpt-5.3-codex，批次大小 8
+          <strong>配置管家:</strong> 收到！配置文件已加载，目标文档是 eedsv1.9.0.docx，批次大小 5
         </div>
         <div class="chat-message parser">
-          <strong>文档阅读员:</strong> Word 文件在这里，我先读一遍... 发现 47 个需求块
+          <strong>文档阅读员:</strong> Word 文件在这里，我先读一遍... 发现 11 个需求块
         </div>
         <div class="chat-message prompter">
-          <strong>提示词作家:</strong> 收到需求数据！我来分成 6 批，每批写一个提示词
+          <strong>提示词作家:</strong> 收到需求数据！我来分成 3 批，每批写一个提示词
         </div>
         <div class="chat-message runner">
           <strong>指挥官:</strong> 提示词准备好了，AI 经纪人你上场
@@ -133,7 +134,7 @@
           <strong>AI 经纪人:</strong> 第1批完成 ✅ 第2批完成 ✅ 第3批完成 ✅
         </div>
         <div class="chat-message extractor">
-          <strong>用例挖掘师:</strong> 让我从这些回复里挖宝... 找到 203 条测试用例！
+          <strong>用例挖掘师:</strong> 让我从这些回复里挖宝... 找到 141 条测试用例！
         </div>
         <div class="chat-message runner">
           <strong>指挥官:</strong> 完美！导出 Excel，任务完成 🎉
@@ -152,6 +153,7 @@
 ├── requirement_parser.py  # 文档阅读员
 ├── generate_requirement_prompts.py  # 提示词作家
 ├── llm_client.py     # AI 经纪人
+├── llm_providers/    # 不同服务商的适配器
 └── stages.py         # 用例挖掘师 + 整体流程
 </code></pre>
         </div>
@@ -160,7 +162,7 @@
           <ul>
             <li><strong>单一职责：</strong>每个文件只做一件事情，出错时容易定位</li>
             <li><strong>可测试性：</strong>每个角色都可以独立测试</li>
-            <li><strong>可扩展性：</strong>想换 LLM 提供商？只改 llm_client.py</li>
+            <li><strong>可扩展性：</strong>想换 LLM 提供商？优先在 <code>pipeline/llm_providers/</code> 增加适配器，再到工厂里注册</li>
             <li><strong>可维护性：</strong>需求解析有问题？只看 requirement_parser.py</li>
           </ul>
         </div>
@@ -177,7 +179,7 @@
 
       <div class="quiz-container">
         <div class="quiz-question">
-          <p><strong>如果你想添加支持新的 LLM 服务商（比如 Claude），你主要需要修改哪个文件？</strong></p>
+          <p><strong>如果你想添加支持新的 LLM 服务商，你主要应该从哪里开始？</strong></p>
 
           <div class="quiz-options">
             <label class="quiz-option">
@@ -186,7 +188,7 @@
             </label>
             <label class="quiz-option correct">
               <input type="radio" name="q2" value="b">
-              llm_client.py - 因为它专门负责 LLM 接口
+              pipeline/llm_providers/ - 新增 provider 类并在 factory.py 注册
             </label>
             <label class="quiz-option">
               <input type="radio" name="q2" value="c">
@@ -199,7 +201,7 @@
           </div>
 
           <div class="quiz-explanation">
-            <p><strong>正确！</strong> 虽然可能需要在 config.py 中添加新的配置选项，但核心的接口实现在 llm_client.py 中。这个文件里有 provider 工厂模式，专门用来支持不同的 LLM 服务商。</p>
+            <p><strong>正确！</strong> <code>llm_client.py</code> 负责统一调度、缓存、重试；具体服务商实现放在 <code>pipeline/llm_providers/</code>，再由 <code>factory.py</code> 选择。</p>
           </div>
         </div>
       </div>

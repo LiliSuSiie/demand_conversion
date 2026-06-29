@@ -51,18 +51,11 @@
         <div class="code-side">
           <h4>Preflight 代码逻辑：</h4>
           <pre><code>async def _run_preflight(self) -> None:
-    # 构造测试请求
-    test_request = LLMRequest(
-        prompt="test preflight",
-        metadata={"chunk_id": "preflight"}
-    )
+    prompt = "Return exactly OK"
+    result = await self.provider.generate(0, prompt)
 
-    # 尝试调用一次
-    response = await self._send_single_request(test_request)
-
-    # 检查返回是否有效
-    if not response.text.strip():
-        raise ValueError("LLM returned empty response")</code></pre>
+    if not result.raw_text.strip():
+        raise RuntimeError("LLM preflight failed")</code></pre>
         </div>
         <div class="english-side">
           <h4>为什么需要 Preflight：</h4>
@@ -78,7 +71,7 @@
     <div class="screen">
       <h2>智能缓存：避免重复消费</h2>
 
-      <p>系统会为每个提示词计算<span class="tooltip" data-tooltip="哈希值：像指纹一样，内容稍有不同就会产生完全不同的哈希值">哈希值</span>，相同的输入不会重复调用 AI。</p>
+      <p>系统会按 chunk 编号保存 LLM 回复，并校验 provider / model 是否匹配当前配置。相同批次在配置不变时会直接复用缓存，避免重复调用 AI。</p>
 
       <div class="cache-flow">
         <div class="cache-step">
@@ -94,8 +87,8 @@
         <div class="cache-step">
           <div class="step-number">2</div>
           <div class="step-content">
-            <h4>计算哈希值</h4>
-            <p>hash: "a1b2c3d4..."</p>
+            <h4>确定缓存文件</h4>
+            <p>chunk_001.json</p>
           </div>
         </div>
 
@@ -131,17 +124,19 @@
       <div class="cache-file-structure">
         <h4>缓存文件结构：</h4>
         <pre><code>prompt_cache/
-├── chunk_0_a1b2c3d4.json    # 第0批的缓存
-├── chunk_1_e5f6g7h8.json    # 第1批的缓存
-└── chunk_2_i9j0k1l2.json    # 第2批的缓存
+├── chunk_001.json    # 第1批的缓存
+├── chunk_002.json    # 第2批的缓存
+└── chunk_003.json    # 第3批的缓存
 
 # 每个缓存文件包含：
 {
   "raw_text": "• 用例：登录成功...",  # AI 原始回复
   "metadata": {
     "provider": "openai_compatible",
-    "model": "gpt-5.3-codex",
-    "usage": {"tokens": 1234}
+    "model": "claude-opus-4-1-20250805",
+    "request_endpoint": "chat_completions",
+    "text_source": "choices.message.content",
+    "usage": {"completion_tokens": 1234}
   }
 }</code></pre>
       </div>
@@ -189,7 +184,7 @@
 
     async def _send_with_semaphore(request):
         async with semaphore:  # 获取信号量
-            return await self._send_single_request(request)
+            return await self.send_prompt(request.chunk_id, request.prompt)
 
     # 并发执行，但受信号量限制
     tasks = [_send_with_semaphore(req) for req in requests]
@@ -266,7 +261,7 @@
           </div>
 
           <div class="quiz-explanation">
-            <p><strong>正确！</strong> 系统会计算提示词的哈希值，相同内容对应相同哈希。如果 <code>prompt_cache/chunk_X_hash.json</code> 文件存在且有效，就直接使用缓存结果，这样既节省了成本，又提高了响应速度。</p>
+            <p><strong>正确！</strong> 如果 <code>prompt_cache/chunk_*.json</code> 文件存在，并且缓存中的 provider / model 与当前配置一致，系统会直接使用缓存结果。若缓存正文为空但 token 用量显示模型实际返回过内容，系统会判定缓存无效并重新请求。</p>
           </div>
         </div>
       </div>
